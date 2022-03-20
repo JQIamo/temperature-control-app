@@ -255,6 +255,7 @@ class TemperatureAppCore:
                 "actions": {
                     name: {
                         "name": action.name,
+                        "display_name": action.display_name,
                         "status_word": action.status_word,
                         "description": action.description,
                         "params_desc": action.params_desc,
@@ -281,7 +282,7 @@ class TemperatureAppCore:
         try:
             program = Program.from_dict(event)
         except (KeyError, TypeError) as e:
-            await self._return_error(callback, f"Syntax error in program: {e}")
+            await self._return_error(callback, f"Syntax error in program {event['name']}: {str(e)}")
             return
 
         self.program_manager.create_program_task(program)
@@ -290,6 +291,10 @@ class TemperatureAppCore:
         await self.fire_control_changed_event()
 
     async def on_edit_program_event(self, event, callback):
+        if 'name' not in event:
+            await self._return_error(callback, f"Name of the program unspecified.")
+            return
+
         try:
             program = Program.from_dict(event)
             self.programs[program.name] = program
@@ -298,7 +303,7 @@ class TemperatureAppCore:
             self.config.set('programs', value=program_list)
             self.config.write()
         except (KeyError, TypeError) as e:
-            await self._return_error(callback, f"Syntax error in program: {e}")
+            await self._return_error(callback, f"Syntax error in program {event['name']}: {str(e)}")
             return
 
     async def on_standby_device_event(self, event, callback):

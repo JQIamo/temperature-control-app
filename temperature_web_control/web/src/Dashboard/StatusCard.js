@@ -2,12 +2,12 @@ import React from 'react';
 
 import Card from 'react-bootstrap/Card'
 import Badge from "react-bootstrap/Badge";
-import {Button} from "react-bootstrap";
+import Button from "react-bootstrap/Button";
 
 function StopButton(props) {
     return (
         <Button
-            className="ml-auto btn-block btn-danger float-end btn-sm"
+            className="ms-auto btn-block btn-danger float-end btn-sm"
             onClick={() => {props.stopProgramHandler(props.currentProgram)}}
         >
             STOP
@@ -18,7 +18,7 @@ function StopButton(props) {
 function DisengageButton(props) {
     return (
         <Button
-            className="ml-auto btn-block btn-info float-end btn-sm"
+            className="ms-auto btn-block btn-info float-end btn-sm"
             onClick={() => {props.standbyHandler(props.device)}}
         >
             Disengage
@@ -74,8 +74,11 @@ function StatusCard(props) {
                 </Badge>
             </Card.Header>
             <Card.Body>
-                <h1 className="display-2">{props.temperature.toFixed(1)} °C</h1>
-                { button }
+                <h1 className="display-4">{props.temperature.toFixed(1)} °C</h1>
+                <div className="d-flex flex-row mt-2">
+                    <div className="p-1 text-muted">SETPOINT {props.setpoint.toFixed(1)} °C</div>
+                    { button }
+                </div>
             </Card.Body>
         </Card>
     );

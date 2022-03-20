@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import List
 
-ActionDefinition = namedtuple("Action", ["name", "status_word", "description", "params_desc",
+ActionDefinition = namedtuple("Action", ["name", "display_name", "status_word", "description", "params_desc",
                                          "need_device", "standalone", "attention_level"])
 
 ATTN_LOW = 0
@@ -10,6 +10,7 @@ ATTN_HIGH = 1
 actions = {
     "CHANGE": ActionDefinition(
         "CHANGE",
+        "Change",
         "Changing",
         "Immediately change the setpoint to a value and wait until temperature settles.",
         [
@@ -21,6 +22,7 @@ actions = {
     ),
     "LINEAR_RAMP": ActionDefinition(
         "LINEAR_RAMP",
+        "Ramp",
         "Ramping",
         "Linearly ramp up/down the temperature.",
         [
@@ -33,24 +35,27 @@ actions = {
     ),
     "SOAK": ActionDefinition(
         "SOAK",
+        "Soak",
         "Soaking",
         "Hold the current temperature.",
         [("TIME", "Duration of soak in minutes.")],
         True,
-        True,
+        False,
         ATTN_LOW
     ),
     "STANDBY": ActionDefinition(
         "STANDBY",
         "Standby",
-        "Disable the server.",
+        "Standby",
+        "Disengage the controller. Put it into Standby mode.",
         [],
         True,
-        True,
+        False,
         ATTN_LOW
     ),
     "LOOP": ActionDefinition(
         "LOOP",
+        "Loop",
         "",
         "Jump back to a specific step and loop for a defined number of times.",
         [

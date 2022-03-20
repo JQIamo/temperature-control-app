@@ -52,7 +52,14 @@ class ProgramManager:
         if program in self.current_programs:
             raise TemperatureProgramException(f"Program {program.name} is running.")
 
+        if not program.occupied_device:
+            raise TemperatureProgramException(f"No device specified.")
+
         for dev in program.occupied_device:
+            if dev not in self.dev_instances:
+                raise TemperatureProgramException(
+                    f"Device {dev} doesn't exist.")
+
             if dev in self.occupied_devices:
                 raise TemperatureProgramException(
                     f"Program {program.name} requires device {dev}, but it is occupied by program "
@@ -90,19 +97,19 @@ class ProgramManager:
 
                     if action.name == "CHANGE":
                         coroutines.append(self.change_temperature(device,
-                                                           action.params['SETPOINT']))
+                                                           float(action.params['SETPOINT'])))
 
                     if action.name == "LINEAR_RAMP":
                         coroutines.append(self.linear_ramp(device,
-                                                           action.params['TARGET_TEMP'],
-                                                           action.params['RATE']))
+                                                           float(action.params['TARGET_TEMP']),
+                                                           float(action.params['RATE'])))
 
                     elif action.name == "SOAK":
-                        coroutines.append(asyncio.sleep(action.params['TIME'] * 60))
+                        coroutines.append(asyncio.sleep(float(action.params['TIME']) * 60))
 
                     elif action.name == "LOOP":
                         target_action = action.params['GOTO']
-                        loop_times = action.params['TIMES']
+                        loop_times = int(action.params['TIMES'])
                         if pointer not in loop_counters:
                             loop_counters[pointer] = 0
                         if loop_counters[pointer] < loop_times:
@@ -129,6 +136,8 @@ class ProgramManager:
                 self.occupied_devices.remove(dev)
                 del self.current_dev_program[dev]
                 del self.current_dev_action[dev]
+
+            await self.update_state_callback()
 
     async def linear_ramp(self, device: TemperatureMonitor, target, rate):
         ramp_interval = self.config.get('ramp_interval', default=1)  # in minutes
@@ -158,6 +167,7 @@ class ProgramManager:
     async def change_temperature(self, device: TemperatureMonitor, target):
         tolerance = self.config.get('temperature_tolerance', default=1)  # in degrees
 
+        device.control_enabled = True
         device.setpoint = target
 
         average_length = 12

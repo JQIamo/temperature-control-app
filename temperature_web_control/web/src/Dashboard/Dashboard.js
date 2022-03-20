@@ -11,6 +11,7 @@ import ProgramsCard from "./ProgramsCard"
 import HistoryCard from "./HistoryCard";
 import LostConnectionModal from "../LostConnectionModal";
 import update from "immutability-helper";
+import QuickActionCard from "./QuickActionCard";
 
 const maxHistoryLength = 1440;
 
@@ -22,7 +23,7 @@ class Dashboard extends React.Component {
             deviceStatus: {},
             currentPrograms: null,
             programs: [],
-            actions: [],
+            actions: {},
             data: null,
         };
         this.serverHandler = new ServerHandler();
@@ -93,19 +94,21 @@ class Dashboard extends React.Component {
         });
     }
 
-    runProgram = (program) => {
-        this.serverHandler.request('run_predefined_program',{ program: program }, this.checkRequestError);
+    runPredefinedProgram = (programName) => {
+        this.serverHandler.request('run_predefined_program',{ program: programName }, this.checkRequestError);
     }
 
     stopProgram = (program) => {
         this.serverHandler.request('abort_program',{ program: program }, this.checkRequestError);
     }
 
-    standbyDevice = (deviceName) => {
-        // this.serverHandler.request('run_program', {
-        //     steps: [ [{action: 'STANDBY', device:deviceName} ] ]
-        // }, this.checkRequestError);
+    runProgram = (program) => {
+        console.log(program);
+        this.serverHandler.request('run_program', program, this.checkRequestError);
 
+    }
+
+    standbyDevice = (deviceName) => {
         this.serverHandler.request('standby_device',{ device: deviceName }, this.checkRequestError);
     }
 
@@ -252,8 +255,15 @@ class Dashboard extends React.Component {
                             <ProgramsCard
                                 programList={this.state.programs}
                                 currentPrograms={this.state.currentPrograms}
-                                runProgramHandler={this.runProgram}
+                                runProgramHandler={this.runPredefinedProgram}
                                 stopProgramHandler={this.stopProgram}
+                            />
+                        </Col>
+                        <Col>
+                            <QuickActionCard
+                                actionLookup={this.state.actions}
+                                status={this.state.deviceStatus}
+                                runHandler={this.runProgram}
                             />
                         </Col>
                     </Row>
