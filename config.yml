@@ -1,0 +1,48 @@
+ramp_interval: 0.1
+history_length: 60
+
+devices:
+  - name: Dummy01
+    dev_type: Dummy
+    fluctuation: 5
+  - name: Dummy02
+    dev_type: Dummy
+    fluctuation: 5
+
+programs:
+  - name: Ramp
+    description: Do some ramp
+    steps:
+      - - action: LINEAR_RAMP
+          device: Dummy01
+          params:
+            TARGET_TEMP: 50
+            RATE: 50
+        - action: LINEAR_RAMP
+          device: Dummy02
+          params:
+            TARGET_TEMP: 75
+            RATE: 75
+      - - action: SOAK
+          device: Dummy01
+          params:
+            TIME: 0.1
+        - action: SOAK
+          device: Dummy02
+          params:
+            TIME: 0.1
+      - - action: STANDBY
+          device: Dummy01
+      - - action: STANDBY
+          device: Dummy02
+  - name: Cool
+    description: Cool back down
+    steps:
+      - - action: CHANGE
+          device: Dummy01
+          params:
+            SETPOINT: 10
+        - action: CHANGE
+          device: Dummy02
+          params:
+            SETPOINT: 10

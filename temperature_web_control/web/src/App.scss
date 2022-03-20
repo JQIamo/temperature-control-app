@@ -1,0 +1,43 @@
+@import 'bootswatch/dist/darkly/variables';
+@import 'bootstrap/scss/bootstrap';
+@import 'bootswatch/dist/darkly/bootswatch';
+
+.blinking{
+    animation: blinking-text-frames 1.2s infinite;
+}
+@keyframes blinking-text-frames {
+    0%{     opacity: 1; }
+    49%{    opacity: 1; }
+    60%{    opacity: 0; }
+    99%{    opacity: 0; }
+    100%{   opacity: 1; }
+}
+
+.bg-warning-blinking {
+    animation: bg-warning-blinking-frames 1.2s infinite;
+    background-color: rgba(var(--bs-warning-rgb), 1);
+    color: rgba(var(--bs-dark-rgb), var(--bs-text-opacity));
+}
+
+@keyframes bg-warning-blinking-frames {
+    0% {
+        background-color: rgba(var(--bs-warning-rgb), 1);
+        color: rgba(var(--bs-dark-rgb), 1);
+    }
+    49% {
+        background-color: rgba(var(--bs-warning-rgb), 1);
+        color: rgba(var(--bs-dark-rgb), 1);
+    }
+    60% {
+        background-color: rgba(var(--bs-secondary-rgb), 1);
+        color: rgba(var(--bs-white-rgb), 1);
+    }
+    99% {
+        background-color: rgba(var(--bs-secondary-rgb), 1);
+        color: rgba(var(--bs-white-rgb), 1);
+    }
+    100% {
+        background-color: rgba(var(--bs-warning-rgb), 1);
+        color: rgba(var(--bs-dark-rgb), 1);
+    }
+}
