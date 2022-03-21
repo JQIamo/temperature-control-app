@@ -109,7 +109,6 @@ class Dashboard extends React.Component {
     }
 
     runProgram = (program) => {
-        console.log(program);
         this.serverHandler.request('run_program', program, this.checkRequestError);
 
     }

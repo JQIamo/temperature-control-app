@@ -35,7 +35,7 @@ class App extends React.Component {
         super(props);
         this.pages = [
             {name: "Dashboard", icon: Speedometer2},
-            {name: "Settings", icon: Gear}
+            // {name: "Settings", icon: Gear}
         ];
         this.state = {
           currentPage: "Dashboard",

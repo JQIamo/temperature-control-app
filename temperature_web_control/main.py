@@ -41,6 +41,7 @@ async def run_ws_server():
 def run_http_server():
     global config, logger
     import json
+    import os
 
     assert isinstance(logger, logging.Logger)
 
@@ -56,29 +57,41 @@ def run_http_server():
 
         return 200, 'application/json', ret
 
-    serve_http("", 8000, { 'websocket' : get_websocket }, logger)
+    directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web/build/")
+
+    serve_http("", 8000, directory, { 'websocket' : get_websocket }, logger)
 
 
-async def main():
+async def main(serve_http=True):
     global config, app_manager, logger
-
-    logger = logging.getLogger("root")
-    logger.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('[%(asctime)s %(levelname)s][%(filename)s:%(lineno)d] %(message)s', "%b %d %H:%M:%S")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
 
     parser = argparse.ArgumentParser(description="Temperature web control app.")
 
     parser.add_argument("-c", "--config", dest="config", type=str,
                         help="path to the config yaml file")
+    parser.add_argument("-v", "--verbose", dest="verbose", type=bool,
+                        help="turn on the verbose logging mode")
     args = parser.parse_args()
+
+    logger = logging.getLogger("root")
+    handler = logging.StreamHandler()
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('[%(asctime)s %(levelname)s][%(filename)s:%(lineno)d] %(message)s',
+                                      "%b %d %H:%M:%S")
+    else:
+        logger.setLevel(logging.INFO)
+        formatter = logging.Formatter('[%(asctime)s %(levelname)s] %(message)s', "%b %d %H:%M:%S")
+
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
 
     config = Config(args.config)
 
     app_manager = TemperatureAppCore(config, logger)
-    http_thread = threading.Thread(target=run_http_server)
 
     plugin_coroutine = []
     for plugin in plugins.values():
@@ -86,10 +99,12 @@ async def main():
         if plugin_run:
             plugin_coroutine.append(plugin_run)
 
+    if serve_http:
+        http_thread = threading.Thread(target=run_http_server, daemon=True)
+        http_thread.start()
+
     try:
         coroutines = [run_ws_server(), app_manager.monitor_status()] + plugin_coroutine
-        await asyncio.gather(*coroutines)
+        await asyncio.gather(*coroutines)  # block forever
     except KeyboardInterrupt:
         pass
-    #http_thread.start()
-    #http_thread.join()
