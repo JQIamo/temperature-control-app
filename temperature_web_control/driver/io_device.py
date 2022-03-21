@@ -13,3 +13,7 @@ class IODevice(ABC):
     def query(self, query: bytes, max_len=-1) -> bytes:
         self.send(query)
         return self.recv(max_len)
+
+    @abstractmethod
+    def reset(self):
+        pass

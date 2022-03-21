@@ -4,12 +4,13 @@ from temperature_web_control.model.temperature_monitor import TemperatureMonitor
 
 
 class DummyDevice(TemperatureMonitor):
-    def __init__(self, name, fluctuation):
+    def __init__(self, name, fluctuation, logger):
         super().__init__(name)
         self._temperature = 10
         self._setpoint = 0
         self.dummy_fluctuation = fluctuation
         self.run = False
+        self.logger = logger
 
     @property
     def temperature(self) -> float:
@@ -51,9 +52,10 @@ def dev_types():
     return ['Dummy']
 
 
-def from_config_dict(config_dict: dict):
+def from_config_dict(config_dict: dict, logger):
     if config_dict['dev_type'] == 'Dummy':
         return DummyDevice(
             config_dict['name'],
-            config_dict['fluctuation'] if 'fluctuation' in config_dict else 5
+            config_dict['fluctuation'] if 'fluctuation' in config_dict else 5,
+            logger
         )

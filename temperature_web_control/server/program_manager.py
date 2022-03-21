@@ -131,7 +131,7 @@ class ProgramManager:
                     pointer += 1
 
             except asyncio.CancelledError:
-                asyncio.create_task(self.update_state_callback())
+                await self.update_state_callback()
             finally:
                 self.current_programs.remove(program)
                 del self.current_step[program.name]
@@ -143,7 +143,7 @@ class ProgramManager:
 
                 await self.update_state_callback()
         except Exception as e:
-            await self.error_callback(str(e))
+            await self.error_callback(e)
 
     async def linear_ramp(self, device: TemperatureMonitor, target, rate):
         ramp_interval = self.config.get('ramp_interval', default=1)  # in minutes

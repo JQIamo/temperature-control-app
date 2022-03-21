@@ -46,7 +46,7 @@ class WebSocketServer:
 
     async def send(self, websocket, message_dict):
         try:
-            self.logger.info(f"Send to : {websocket}" + json.dumps(message_dict))
+            self.logger.debug(f"Send to : {websocket}" + json.dumps(message_dict))
             await websocket.send(json.dumps(message_dict))
         except websockets.ConnectionClosed:
             pass
@@ -54,13 +54,13 @@ class WebSocketServer:
     async def send_event(self, websocket, event, message_dict):
         try:
             message_dict.update({ 'event': event })
-            self.logger.info(f"Send to : {websocket}" + json.dumps(message_dict))
+            self.logger.debug(f"Send to : {websocket}" + json.dumps(message_dict))
             await websocket.send(json.dumps(message_dict))
         except websockets.ConnectionClosed:
             pass
 
     async def broadcast(self, websocket_clients, message_dict):
-        self.logger.info("Broadcast: " + json.dumps(message_dict))
+        self.logger.debug("Broadcast: " + json.dumps(message_dict))
         websockets.broadcast(websocket_clients, json.dumps(message_dict))
 
     async def serve_until_exit(self):

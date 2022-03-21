@@ -83,7 +83,7 @@ class TemperatureAppCore:
     def _load_devices(self):
         dev_instances = {}
         for dev in self.config.get('devices'):
-            self.dev_instances[dev["name"]] = load_driver(dev)
+            self.dev_instances[dev["name"]] = load_driver(dev, self.logger)
 
         return dev_instances
 
@@ -145,8 +145,14 @@ class TemperatureAppCore:
         except KeyboardInterrupt:
             pass
 
-    async def fire_program_error(self, error_msg):
-        await self._fire_event('program_error', {'error': error_msg})
+    async def fire_program_error(self, error):
+        self.logger.error("Received error, broadcasting to clients...")
+        if  isinstance(error, Exception):
+            self.logger.exception(error)
+            await self._fire_event('program_error', {'error': str(error)})
+        else:
+            self.logger.error(error)
+            await self._fire_event('program_error', {'error': error})
 
     async def update_status_and_fire_event(self):
         status = await self.acquire_status()
@@ -235,7 +241,6 @@ class TemperatureAppCore:
 
     async def on_abort_program_event(self, event, callback):
         await self.program_manager.abort_program(event["program"])
-        await self.fire_control_changed_event()
         await self._return_ok(callback)
 
     async def on_current_programs_event(self, event, callback):

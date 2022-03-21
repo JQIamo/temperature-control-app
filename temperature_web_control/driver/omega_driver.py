@@ -1,4 +1,6 @@
+from functools import wraps
 from typing import List
+from threading import Lock
 
 from temperature_web_control.driver.ethernet_device import EthernetDevice
 from temperature_web_control.driver.io_device import IODevice
@@ -6,23 +8,48 @@ from temperature_web_control.driver.serial_device import SerialDevice
 from temperature_web_control.model.temperature_monitor import TemperatureMonitor, Option
 
 
+def retry_wrap(func):
+    @wraps(func)
+    def _func(self, *args, **kwargs):
+        retry = 5
+        _e = None
+
+        for i in range(retry):
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as e:
+                self.logger.error("OmegaISeries: Encountered communication error:")
+                self.logger.exception(e)
+                self.logger.error(f"OmegaISeries: Retrying, {i+1} of {retry} times...")
+                self.reset()
+                _e = e
+                pass
+
+        raise _e
+
+    return _func
+
+
 class OmegaCommunicationError(Exception):
-    def __init__(self, cmd: str, error_response: bytes):
+    def __init__(self, cmd: str, error_response = None):
         super().__init__(f"Received {self.error_to_msg(error_response)} while sending command {cmd}.")
 
     @staticmethod
     def error_to_msg(error_response):
-        if error_response == b'?43':
+        error_response = error_response.strip()
+        if error_response == '?43':
             return "Command Error"
-        elif error_response == b'?46':
+        elif error_response == '?46':
             return "Format Error"
-        elif error_response == b'?50':
+        elif error_response == '?50':
             return "Parity Error"
-        elif error_response == b'?56':
+        elif error_response == '?56':
             return "Serial Device Address Error"
-        else:
+        elif error_response is not None:
             err_str = error_response.decode("utf-8")
-            return f"Unknown Error {err_str}"
+            return f"unknown error {err_str}"
+        else:
+            return f"unknown error"
 
 
 class OmegaISeries(TemperatureMonitor):
@@ -32,9 +59,11 @@ class OmegaISeries(TemperatureMonitor):
     See https://assets.omega.com/manuals/M3397.pdf
     """
 
-    def __init__(self, name, io_dev: IODevice, output):
+    def __init__(self, name, io_dev: IODevice, output, logger):
         super().__init__(name)
+        self.logger = logger
         self.io_dev = io_dev
+        self.query_lock = Lock()
         self.echo_enabled = self._check_echo_enable()
         self.unit = self._check_unit()
         self.run = False
@@ -42,15 +71,20 @@ class OmegaISeries(TemperatureMonitor):
         assert output in [1, 2]
         self.output = output
 
-    @staticmethod
-    def get_ethernet_instance(name, addr, port, output=1):
-        io_dev = EthernetDevice(addr, port, b'\r')
-        return OmegaISeries(name, io_dev, output)
+        self.retry = 5
+
+    def reset(self):
+        self.io_dev.reset()
 
     @staticmethod
-    def get_serial_instance(name, port, baudrate=9600, output=1):
+    def get_ethernet_instance(logger, name, addr, port, output=1, interval=1):
+        io_dev = EthernetDevice(addr, port, b'\r', interval)
+        return OmegaISeries(name, io_dev, output, logger)
+
+    @staticmethod
+    def get_serial_instance(logger, name, port, baudrate=9600, output=1):
         io_dev = SerialDevice(port, baudrate, b'\r')
-        return OmegaISeries(name, io_dev, output)
+        return OmegaISeries(name, io_dev, output, logger)
 
     def other_options(self) -> List[Option]:
         return [
@@ -69,6 +103,7 @@ class OmegaISeries(TemperatureMonitor):
         return True
 
     @property
+    @retry_wrap
     def temperature(self):
         return self._convert_temperature(float(self.query("*X01")))
 
@@ -89,6 +124,10 @@ class OmegaISeries(TemperatureMonitor):
 
     @property
     def setpoint(self):
+        return self.query_setpoint()
+
+    @retry_wrap
+    def query_setpoint(self):
         # See manual 5.2 Example (p.18)
         ret = int(self.query("*R01"), 16)
         sign = 1 if ret & (1 << 23) == 0 else -1
@@ -110,6 +149,7 @@ class OmegaISeries(TemperatureMonitor):
         return sign * self._convert_temperature(setpoint_data) * factor
 
     @setpoint.setter
+    @retry_wrap
     def setpoint(self, val):
         sign_mask = 0
         if val < 0:
@@ -123,6 +163,7 @@ class OmegaISeries(TemperatureMonitor):
     def stop_program_immediately(self):
         self._program_stop_flag = True
 
+    @retry_wrap
     def _query_output_config(self):
         cmd_index = "R"
         if self.output == 1:
@@ -190,13 +231,13 @@ class OmegaISeries(TemperatureMonitor):
         assert 0 < val < 9999
         self.send(f"*W19{val:04X}")
 
+    @retry_wrap
     def _check_echo_enable(self):
         cmd = "*R1F\r"
-        _ret = self.io_dev.query(cmd.encode("utf-8"))
-        if _ret[0] == b'?':
-            raise OmegaCommunicationError(cmd, _ret)
-
+        _ret = self.io_dev.query(cmd.encode("utf-8")).strip()
         ret = _ret.decode("utf-8")
+        if _ret[0] == '?':
+            raise OmegaCommunicationError(cmd, _ret)
 
         if ret[0] == "R":
             ret = ret[3:]
@@ -207,6 +248,7 @@ class OmegaISeries(TemperatureMonitor):
 
         return echo != 0
 
+    @retry_wrap
     def _check_unit(self):
         ret = self.query("*R08")  # Query Reading Configuration
 
@@ -216,18 +258,27 @@ class OmegaISeries(TemperatureMonitor):
         return "C" if unit == 0 else "F"
 
     def query(self, cmd: str, max_len=-1) -> str:
-        ret = self.io_dev.query(cmd.encode("utf-8") + b"\r", max_len)
-        if not ret:
-            return ""
+        # To be honest, using coroutine should avoid conflicts
+        # but somehow I noticed competition of different coroutines(?) enter this method
+        # at the same time. I don't know why. Maybe I should do more tests.
+        with self.query_lock:
+            ret = self.io_dev.query(cmd.encode("utf-8") + b"\r", max_len).strip()
+            if not ret:
+                return ""
 
-        if ret[0] == b'?':
-            raise OmegaCommunicationError(cmd, ret)
+            ret_str = ret.decode("utf-8").strip()
 
-        ret_str = ret.decode("utf-8")
+            if ret_str[0] == '?':
+                raise OmegaCommunicationError(cmd, ret_str)
 
-        if self.echo_enabled:
-            return ret_str[len(cmd) - 1:]  # -1: get rid of *
-        return ret_str
+
+            if self.echo_enabled:
+                prefix = cmd[1:4]
+                if ret_str[0:len(cmd) - 1] != prefix:
+                    raise OmegaCommunicationError(cmd, None)
+
+                return ret_str[len(cmd) - 1:]  # -1: get rid of *
+            return ret_str
 
     def send(self, cmd):
         if self.echo_enabled:
@@ -246,16 +297,19 @@ def dev_types():
     return ['Omega iSeries Ethernet', 'Omega iSeries Serial']
 
 
-def from_config_dict(config_dict: dict):
+def from_config_dict(config_dict: dict, logger):
     if config_dict['dev_type'] == 'Omega iSeries Ethernet':
         return OmegaISeries.get_ethernet_instance(
+            logger,
             config_dict['name'],
             config_dict['addr'],
             config_dict['port'] if 'port' in config_dict else 2000,
-            config_dict['output'] if 'output' in config_dict else 1
+            config_dict['output'] if 'output' in config_dict else 1,
+            config_dict['request_interval'] if 'request_interval' in config_dict else 0
         )
     elif config_dict['dev_type'] == 'Omega iSeries Serial':
         return OmegaISeries.get_serial_instance(
+            logger,
             config_dict['name'],
             config_dict['port'],
             config_dict['baudrate'] if 'baudrate' in config_dict else 9600,
