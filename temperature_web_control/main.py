@@ -62,7 +62,7 @@ def run_http_server():
     serve_http("", 8000, directory, { 'websocket' : get_websocket }, logger)
 
 
-async def main(serve_http=True):
+async def run(serve_http=True):
     global config, app_manager, logger
 
     parser = argparse.ArgumentParser(description="Temperature web control app.")
@@ -106,5 +106,11 @@ async def main(serve_http=True):
     try:
         coroutines = [run_ws_server(), app_manager.monitor_status()] + plugin_coroutine
         await asyncio.gather(*coroutines)  # block forever
+    except KeyboardInterrupt:
+        pass
+
+def main():
+    try:
+        asyncio.run(run())
     except KeyboardInterrupt:
         pass
