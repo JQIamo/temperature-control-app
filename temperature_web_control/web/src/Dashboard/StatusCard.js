@@ -64,6 +64,9 @@ function StatusCard(props) {
         }
     }
 
+    const temperature = props.temperature ? props.temperature.toFixed(1) : "--.--";
+    const setpoint = props.setpoint ? props.setpoint.toFixed(1) : "--.--";
+
 
     return (
         <Card className={stateStyle + " mb-3"}>
@@ -74,9 +77,9 @@ function StatusCard(props) {
                 </Badge>
             </Card.Header>
             <Card.Body>
-                <h1 className="display-4">{props.temperature.toFixed(1)} °C</h1>
+                <h1 className="display-4">{temperature} °C</h1>
                 <div className="d-flex flex-row mt-2">
-                    <div className="p-1 text-muted">SETPOINT {props.setpoint.toFixed(1)} °C</div>
+                    <div className="p-1 text-muted">SETPOINT {setpoint} °C</div>
                     { button }
                 </div>
             </Card.Body>

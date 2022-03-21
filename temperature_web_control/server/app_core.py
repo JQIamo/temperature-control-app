@@ -6,9 +6,8 @@ from collections import deque
 
 from temperature_web_control.driver import load_driver
 from temperature_web_control.model.program import Program, actions
-from temperature_web_control.model.temperature_monitor import TemperatureMonitor
 from temperature_web_control.server.program_manager import ProgramManager
-from temperature_web_control.server.utils import Config
+from temperature_web_control.utils import Config
 
 
 def async_wrap(func):
@@ -42,7 +41,10 @@ class TemperatureHistory:
 
         for dev, status in dev_status.items():
             self.times[dev].append(time.time())
-            self.temperatures[dev].append(status['temperature'])
+            if 'temperature' in status:
+                self.temperatures[dev].append(status['temperature'])
+            else:
+                self.temperatures[dev].append(None)
 
     def dump_data(self):
         ret = {}
@@ -63,6 +65,7 @@ class TemperatureAppCore:
         self.subscribers = {
             'status_available': {},
             'control_changed': {},
+            'program_error': {}
         }
         self.last_status = {}
 
@@ -71,8 +74,8 @@ class TemperatureAppCore:
 
         self.program_manager = ProgramManager(config, self.dev_instances,
                                               lambda: asyncio.gather(self.update_status_and_fire_event(),
-                                                                     self.fire_control_changed_event())
-                                              )
+                                                                     self.fire_control_changed_event()),
+                                              self.fire_program_error)
         history_len = config.get('history_length', default=1000)
         self.history = TemperatureHistory(history_len, self.dev_instances)
         self.subscribe_to('status_available', self.history, self.history.status_update_handler)
@@ -141,6 +144,9 @@ class TemperatureAppCore:
 
         except KeyboardInterrupt:
             pass
+
+    async def fire_program_error(self, error_msg):
+        await self._fire_event('program_error', {'error': error_msg})
 
     async def update_status_and_fire_event(self):
         status = await self.acquire_status()

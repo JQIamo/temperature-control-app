@@ -12,6 +12,7 @@ import HistoryCard from "./HistoryCard";
 import LostConnectionModal from "../LostConnectionModal";
 import update from "immutability-helper";
 import QuickActionCard from "./QuickActionCard";
+import AlertPop from "./AlertPop";
 
 const maxHistoryLength = 1440;
 
@@ -25,6 +26,7 @@ class Dashboard extends React.Component {
             programs: [],
             actions: {},
             data: null,
+            error: null,
         };
         this.serverHandler = new ServerHandler();
         this.serverHandler.establishConnection();
@@ -59,6 +61,10 @@ class Dashboard extends React.Component {
         this.serverHandler.subscribeTo(
             "control_changed",
             (message) => this.requestControlInfo()
+        );
+        this.serverHandler.subscribeTo(
+            "program_error",
+            (message) => { this.setState({ error: message.error }) }
         );
     }
 
@@ -119,8 +125,8 @@ class Dashboard extends React.Component {
 
     checkRequestError = (result) => {
         if (result.result !== "ok") {
-            // TODO
             console.log("Server returned error: ", result.error_msg);
+            this.setState({ error: result.error_msg });
             return false;
         }
         return true;
@@ -236,6 +242,12 @@ class Dashboard extends React.Component {
         return (
             <>
                 <Container className="p-3">
+                    <AlertPop show={!!this.state.error}
+                              error={this.state.error}
+                              dismissHandler={() => {
+                                  this.setState({ error: null });
+                              }}
+                    />
                     <Row>
                         <Col>
                             <Row className="row-cols-1 row-cols-sm-1 row-cols-md-1 row-cols-lg-2">

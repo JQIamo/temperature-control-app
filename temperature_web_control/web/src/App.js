@@ -48,6 +48,7 @@ class App extends React.Component {
                 families: ['B612']
             }
         });
+        document.title = "Temperature Control";
     }
 
     render = () => {
