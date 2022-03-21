@@ -104,6 +104,7 @@ class TemperatureAppCore:
         return event_handlers
 
     def subscribe_to(self, event_name, subscriber, handler, group_id=None):
+        self.logger.info(f"AppCore: {subscriber} subscribes to {event_name}, group id {group_id}.")
         if event_name in self.subscribers:
             if group_id:
                 if group_id not in self.subscribers[event_name]:
@@ -115,6 +116,7 @@ class TemperatureAppCore:
                 self.subscribers[event_name][subscriber] = SubscriberGroup(subscriber, [subscriber], handler)
 
     def unsubscribe_to_all(self, subscriber):
+        self.logger.info(f"AppCore: {subscriber} unsubscribes to all events.")
         for event, subscriber_grp in self.subscribers:
             if subscriber in subscriber_grp.subscribers:
                 subscriber_grp.subscribers.remove(subscriber)
@@ -135,7 +137,7 @@ class TemperatureAppCore:
             await subscriber_grp.message_handler(subscriber_grp.subscribers, message)
 
     async def monitor_status(self):
-        self.logger.info("AppManager: Monitor start")
+        self.logger.info("AppCore: Monitor start")
         interval = self.config.get('update_interval', default=5)
         try:
             while True:
@@ -146,7 +148,7 @@ class TemperatureAppCore:
             pass
 
     async def fire_program_error(self, error):
-        self.logger.error("Received error, broadcasting to clients...")
+        self.logger.error("AppCore: Received error, broadcasting to clients...")
         if  isinstance(error, Exception):
             self.logger.exception(error)
             await self._fire_event('program_error', {'error': str(error)})
@@ -176,6 +178,7 @@ class TemperatureAppCore:
         return status
 
     async def on_request_status_event(self, event, callback):
+        self.logger.debug(f"AppCore: Received event: request_status.")
         if self.last_status:
             status = self.last_status
         else:
@@ -210,7 +213,7 @@ class TemperatureAppCore:
                 'status': 'ok'
             }
         except Exception as e:
-            self.logger.error(f"Exception caught while gather status of {dev.name}:")
+            self.logger.error(f"AppCore: Exception caught while gather status of {dev.name}:")
             self.logger.exception(e)
             return {
                 'status': 'error',
@@ -226,9 +229,10 @@ class TemperatureAppCore:
         for program_dict in programs:
             program = Program.from_dict(program_dict)
             self.programs[program.name] = program
-            self.logger.debug(f"Load program '{program.name}'")
+            self.logger.debug(f"AppCore: Load program '{program.name}'")
 
     async def on_predefined_program_run_event(self, event, callback):
+        self.logger.debug(f"AppCore: Received event: run_predefined_program.")
         if event["program"] not in self.programs:
             await self._return_error(callback, "Unknown program.")
 
@@ -236,19 +240,20 @@ class TemperatureAppCore:
 
         self.program_manager.create_program_task(program)
         await self._return_ok(callback)
-        await self.update_status_and_fire_event()
-        await self.fire_control_changed_event()
 
     async def on_abort_program_event(self, event, callback):
+        self.logger.debug(f"AppCore: Received event: abort_program.")
         await self.program_manager.abort_program(event["program"])
         await self._return_ok(callback)
 
     async def on_current_programs_event(self, event, callback):
+        self.logger.debug(f"AppCore: Received event: current_program.")
         programs = self.program_manager.current_programs
         await self._return_ok(callback, {'current_programs':
                                              [program.name for program in programs] })
 
     async def on_list_program_event(self, event, callback):
+        self.logger.debug(f"AppCore: Received event: list_program.")
         await self._return_ok(callback, {'programs': [
             {
                 'name': program.name,
@@ -257,9 +262,11 @@ class TemperatureAppCore:
         ]})
 
     async def on_fetch_history_event(self, event, callback):
+        self.logger.debug(f"AppCore: Received event: fetch_history.")
         await self._return_ok(callback, {'data': self.history.dump_data()})
 
     async def on_list_actions_event(self, event, callback):
+        self.logger.debug(f"AppCore: Received event: list_actions.")
         await self._return_ok(
             callback,
             {
@@ -280,6 +287,8 @@ class TemperatureAppCore:
     async def on_run_program_event(self, event, callback):
         import uuid
 
+        self.logger.debug(f"AppCore: Received event: run_program.")
+
         if 'steps' not in event:
             await self._return_error(callback, "Malformed message.")
             return
@@ -292,6 +301,7 @@ class TemperatureAppCore:
 
         try:
             program = Program.from_dict(event)
+            self.logger.debug(f"AppCore: Program: {program.to_dict()}")
         except (KeyError, TypeError) as e:
             await self._return_error(callback, f"Syntax error in program {event['name']}: {str(e)}")
             return
@@ -302,6 +312,7 @@ class TemperatureAppCore:
         await self.fire_control_changed_event()
 
     async def on_edit_program_event(self, event, callback):
+        self.logger.debug(f"AppCore: Received event: edit_program.")
         if 'name' not in event:
             await self._return_error(callback, f"Name of the program unspecified.")
             return
@@ -318,10 +329,14 @@ class TemperatureAppCore:
             return
 
     async def on_standby_device_event(self, event, callback):
-        device = self.dev_instances[event['device']]
-        device.control_enabled = False
-        await self.update_status_and_fire_event()
-        await self._return_ok(callback)
+        self.logger.debug(f"AppCore: Received event: standby_device.")
+        try:
+            device = self.dev_instances[event['device']]
+            device.control_enabled = False
+            await self.update_status_and_fire_event()
+            await self._return_ok(callback)
+        except (KeyError, TypeError) as e:
+            await self._return_error(callback, e)
 
 
 

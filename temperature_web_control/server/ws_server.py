@@ -21,10 +21,13 @@ class WebSocketServer:
             self.event_handlers[event].append(handler)
 
     async def handler(self, websocket):
+        self.logger.info(f"WSServer: New connection from "
+                         f"{websocket.remote_address[0]}:{websocket.remote_address[1]}.")
         self.active_ws.append(websocket)
         try:
             async for message in websocket:
-                self.logger.debug(f"WSServer: Incoming message from {websocket}:")
+                self.logger.debug(f"WSServer: Incoming message from "
+                                  f"{websocket.remote_address[0]}:{websocket.remote_address[1]}.")
                 self.logger.debug(message)
 
                 event = json.loads(message)
@@ -34,14 +37,17 @@ class WebSocketServer:
                     event['_client_ws'] = websocket
                     await asyncio.gather(*[ handler(event, partial(self.send_event, websocket, event_type))
                                            for handler in self.event_handlers[event_type] ])
-        except websockets.ConnectionClosed:
-            self.logger.debug(f"WSServer: Connection closed: {websocket}")
+        except (websockets.ConnectionClosed, websockets.ConnectionClosedOK, websockets.ConnectionClosedError):
+            self.logger.info(f"WSServer: Connection to client "
+                              f"{websocket.remote_address[0]}:{websocket.remote_address[1]} closed.")
             if 'disconnected' in self.event_handlers:
                 await self.event_handlers['disconnected']({
                     'event': 'disconnected',
                     '_client_ws': websocket
                 }, None)
         finally:
+            self.logger.info(f"WSServer: Remove client "
+                             f"{websocket.remote_address[0]}:{websocket.remote_address[1]} from the broadcast list.")
             self.active_ws.remove(websocket)
 
     async def send(self, websocket, message_dict):
@@ -54,7 +60,7 @@ class WebSocketServer:
     async def send_event(self, websocket, event, message_dict):
         try:
             message_dict.update({ 'event': event })
-            self.logger.debug(f"Send to : {websocket}" + json.dumps(message_dict))
+            self.logger.debug(f"WSServer: Send to : {websocket}" + json.dumps(message_dict))
             await websocket.send(json.dumps(message_dict))
         except websockets.ConnectionClosed:
             pass
@@ -64,7 +70,7 @@ class WebSocketServer:
         websockets.broadcast(websocket_clients, json.dumps(message_dict))
 
     async def serve_until_exit(self):
-        self.logger.info(f"Websocket server running at ws://{self.bind_addr}:{self.port}")
+        self.logger.info(f"WSServer: Websocket server running at ws://{self.bind_addr}:{self.port}")
 
-        async with websockets.serve(self.handler, self.bind_addr, self.port):
+        async with websockets.serve(self.handler, self.bind_addr, self.port, ping_timeout=20, ping_interval=5):
             await asyncio.Future()
