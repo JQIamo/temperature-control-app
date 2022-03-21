@@ -1,38 +1,10 @@
-import sys
 import os
-import pkgutil
-import re
+
+from temperature_web_control.utils import list_all_modules
 
 # Automatically load available drivers
 
-def get_module(full_package_name, module_info):
-    if full_package_name not in sys.modules:
-        module = module_info.module_finder.find_module(
-            module_info.name).load_module(module_info.name)
-        sys.modules[full_package_name] = module
-    else:
-        module = sys.modules[full_package_name]
-
-    return module
-
-def list_all_driver_modules():
-    drivers_dict = {}
-
-    dirname = os.path.dirname(os.path.abspath(__file__))
-    for module_info in pkgutil.iter_modules([dirname]):
-        package_name = module_info.name
-        match = re.match("(.*)_driver", package_name)
-        if not match:
-            continue
-
-        driver_name = match[1]
-
-        full_package_name = f"{dirname}.{package_name}"
-        drivers_dict[driver_name] = get_module(full_package_name, module_info)
-
-    return drivers_dict
-
-drivers = list_all_driver_modules()
+drivers = list_all_modules("(.*)_driver", os.path.dirname(os.path.abspath(__file__)))
 driver_loaders = {}
 
 for driver in drivers.values():

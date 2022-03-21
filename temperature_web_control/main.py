@@ -2,12 +2,12 @@ import asyncio
 import logging
 import argparse
 import threading
-import yaml
 
 from temperature_web_control.server.app_core import TemperatureAppCore
 from temperature_web_control.server.ws_server import WebSocketServer
 from temperature_web_control.server.http_server import serve_http
-from temperature_web_control.server.utils import Config
+from temperature_web_control.utils import Config
+from temperature_web_control.plugin import plugins
 
 config = {}
 app_manager: TemperatureAppCore = None
@@ -80,8 +80,15 @@ async def main():
     app_manager = TemperatureAppCore(config, logger)
     http_thread = threading.Thread(target=run_http_server)
 
+    plugin_coroutine = []
+    for plugin in plugins.values():
+        plugin_run = plugin.initialize(config, app_manager, logger)
+        if plugin_run:
+            plugin_coroutine.append(plugin_run)
+
     try:
-        await asyncio.gather(run_ws_server(), app_manager.monitor_status())
+        coroutines = [run_ws_server(), app_manager.monitor_status()] + plugin_coroutine
+        await asyncio.gather(*coroutines)
     except KeyboardInterrupt:
         pass
     #http_thread.start()

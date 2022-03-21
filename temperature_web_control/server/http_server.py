@@ -23,6 +23,7 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
         else:
             super().do_GET()
 
+
 def serve_http(bind_addr, port, get_handler, logger: Logger):
     global get_request_handler
 

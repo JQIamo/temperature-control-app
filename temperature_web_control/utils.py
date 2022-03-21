@@ -1,4 +1,34 @@
+import sys
+import pkgutil
+import re
 import yaml
+
+
+def get_module(full_package_name, module_info):
+    if full_package_name not in sys.modules:
+        module = module_info.module_finder.find_module(
+            module_info.name).load_module(module_info.name)
+        sys.modules[full_package_name] = module
+    else:
+        module = sys.modules[full_package_name]
+
+    return module
+
+def list_all_modules(pattern, dirname):
+    modules_dict = {}
+
+    for module_info in pkgutil.iter_modules([dirname]):
+        package_name = module_info.name
+        match = re.match(pattern, package_name)
+        if not match:
+            continue
+
+        module_name = match[1]
+
+        full_package_name = f"{dirname}.{package_name}"
+        modules_dict[module_name] = get_module(full_package_name, module_info)
+
+    return modules_dict
 
 
 class Config:
