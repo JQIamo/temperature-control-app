@@ -6,8 +6,15 @@ from setuptools.command.build_ext import build_ext as build_ext_orig
 class build_ext(build_ext_orig):
     def run(self):
         directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temperature_web_control/web/")
+
+        command = ['npm', '--prefix', directory, 'install']
+        self.announce(f"install web dependencies: {command}")
+
+        self.spawn(command)
+
         command = ['npm', '--prefix', directory, 'run', 'build']
         self.announce(f"building web assets: {command}")
+
         self.spawn(command)
 
         super().run()
