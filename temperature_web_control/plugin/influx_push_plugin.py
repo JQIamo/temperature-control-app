@@ -14,7 +14,7 @@ class TokenAuth(requests.auth.AuthBase):
         self.token = token
 
     def __call__(self, r):
-        r.header['Authorization'] = f'Basic {self.token}'
+        r.headers['Authorization'] = f'Basic {self.token}'
         return r
 
 
@@ -49,7 +49,7 @@ class InfluxPushPluginState(PluginState):
 
             req = []
             for dev in status.values():
-                req.append(f"{self.table},{dev['name']}={dev['temperature']:.1f} {dev['name']}_units=\"C\" {t}")
+                req.append(f"{self.table} {dev['name']}={dev['temperature']:.1f},{dev['name']}_units=\"C\" {t}")
                 self.logger.debug(f"Influx Push Plugin: Request {req}")
 
             r = requests.post(req_url, data="\n".join(req), auth=self.auth)
@@ -64,8 +64,8 @@ class InfluxPushPluginState(PluginState):
         pass
 
 
-def initialize(config: Config, app_core: TemperatureAppCore, logger: Logger) -> Union[PluginState, None]:
-    if config.get("influx_push_plugin", default=None):
+async def initialize(config: Config, app_core: TemperatureAppCore, logger: Logger) -> Union[PluginState, None]:
+    if config.get("influx_plugin", default=None):
         plugin = InfluxPushPluginState(config, app_core, logger)
         return plugin
     else:
