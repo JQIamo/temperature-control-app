@@ -27,7 +27,7 @@ class InfluxPushPluginState(PluginState):
         self.auth = TokenAuth(self.config.get("influx_plugin", "token"))
         self.url = self.config.get("influx_plugin", "influx_api_url")
         self.database =self.config.get("influx_plugin", "database")
-        self.table = self.config.get("influx_plugin", "table")
+        self.measurement = self.config.get("influx_plugin", "measurement")
         self.interval = self.config.get("influx_plugin", "push_interval", default=5) * 60
 
         self.last_push_time = 0
@@ -49,7 +49,7 @@ class InfluxPushPluginState(PluginState):
 
             req = []
             for dev in status.values():
-                req.append(f"{self.table} {dev['name']}={dev['temperature']:.1f},{dev['name']}_units=\"C\" {t}")
+                req.append(f"{self.measurement} {dev['name']}={dev['temperature']:.1f},{dev['name']}_units=\"C\" {t}")
                 self.logger.debug(f"Influx Push Plugin: Request {req}")
 
             r = requests.post(req_url, data="\n".join(req), auth=self.auth)

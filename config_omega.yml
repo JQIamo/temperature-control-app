@@ -1,6 +1,7 @@
 ramp_interval: 1   # time interval between changing the setpoint during a ramp
 history_length: 600  # points of temperature history stored in the memory
 update_interval: 5   # time interval between each read
+websocket_access_addr: ws://192.168.12.26:3001/
 
 devices:
   - name: SodiumCup(T1)
@@ -47,3 +48,10 @@ programs:
           device: SodiumCup(T1)
         - action: STANDBY
           device: Flange(T2)
+
+influx_plugin:
+  influx_api_url: http://128.8.27.25:8086/
+  token: bmFlcl91c2VyOkRvb3JSZWFsQnJvdWdodFRhc3Rl
+  database: naer_db
+  measurement: NaOven_readings
+  push_interval: 0.25  # 1/4 min = 15 s

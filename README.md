@@ -140,6 +140,22 @@ Expressing nested list can be somewhat confusing in YAML. Please note the differ
           device: Flange(T2)
 ```
 
+## Plugins
+
+If you have an external logger like InfluxDB, you may want to also add a plugin to grab the
+temperature data and upload them.
+
+Now the only I have made is the one that pushes data to InfluxDB. To use it, add the following
+section to your configuration file:
+```yaml
+influx_plugin:
+  influx_api_url: http://jqi-logger.physics.umd.edu:8086/
+  token: {your secret token}
+  database: naer_db
+  measurement: NaOven_readings
+  push_interval: 0.25  # 1/4 min = 15 s
+  ```
+
 ## Development
 
 This app relies on Python for the server and [React.js](https://reactjs.org/) for the web 
@@ -159,10 +175,9 @@ development and Async IO. All you need is:
 
 ### Add plugins
 
-If you have an external logger like InfluxDB, you may want to also write a script to grab the 
-temperature data and upload them.
-In this case, you can write a plugin that subscribes to the `status_available` event of the
-app core.
+You can write plugins that subscribe to the events (like `status_available` event) of the app core
+and process it in your own way. You are also free to call the event handlers insider app core
+just like what the web app does.
 
 You may check out [plugin/influx_push_plugin.py](temperature_web_control/plugin/influx_push_plugin.py)
 and change the push logic to suit your need.
