@@ -160,9 +160,6 @@ class OmegaISeries(TemperatureMonitor):
         cmd = f"*W01{sign_mask | factor_mask | setpoint_data:06X}"
         self.send(cmd)
 
-    def stop_program_immediately(self):
-        self._program_stop_flag = True
-
     @retry_wrap
     def _query_output_config(self):
         cmd_index = "R"

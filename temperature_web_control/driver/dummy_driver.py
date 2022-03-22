@@ -16,7 +16,6 @@ class DummyDevice(TemperatureMonitor):
     def temperature(self) -> float:
         return self._temperature + (random.random() * 2 - 1) * self.dummy_fluctuation
 
-    # ===== Setpoint ====
     @property
     def controllable(self) -> bool:
         return True
@@ -37,9 +36,6 @@ class DummyDevice(TemperatureMonitor):
     def setpoint(self, value):
         self._setpoint = value
         self._temperature = value
-
-    def stop_program_immediately(self):
-        return
 
     # ==== Other options ====
     @property
