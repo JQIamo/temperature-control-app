@@ -96,9 +96,6 @@ class ProgramManager:
                             occupied_device_in_step.append(action.device)
                             self.current_dev_action[action.device] = action
 
-                            # let user know the program is running before doing time-consuming jobs
-                            await self.update_state_callback()
-
                         if action.name == "CHANGE":
                             coroutines.append(self.change_temperature(device,
                                                                float(action.params['SETPOINT'])))
@@ -113,6 +110,11 @@ class ProgramManager:
 
                         elif action.name == "LOOP":
                             target_action = action.params['GOTO']
+
+                            if not (0 <= target_action < len(program.steps)):
+                                raise TemperatureProgramException(
+                                    "Loop target out range.")
+
                             loop_times = int(action.params['TIMES'])
                             if pointer not in loop_counters:
                                 loop_counters[pointer] = 0
@@ -125,8 +127,10 @@ class ProgramManager:
                         elif action.name == "STANDBY":
                             device.control_enabled = False
 
-                    await asyncio.gather(*coroutines)
+                    # let user know the program is running before doing time-consuming jobs
                     await self.update_state_callback()
+
+                    await asyncio.gather(*coroutines)
 
                     pointer += 1
 

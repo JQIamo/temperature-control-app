@@ -48,11 +48,16 @@ class DummyDevice(TemperatureMonitor):
             Option("dummy_fluctuation", "Fluctuation of dummy data.", float),
         ]
 
+
 def dev_types():
+    # In this function, you should return the device type to map to.
+    # The App Core will send the device config items whose type is one of the values below
+    # to the `from_config_dict` function.
     return ['Dummy']
 
 
 def from_config_dict(config_dict: dict, logger):
+    # Initialize device instance with the parameters in config_dict.
     if config_dict['dev_type'] == 'Dummy':
         return DummyDevice(
             config_dict['name'],

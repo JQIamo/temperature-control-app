@@ -1,0 +1,49 @@
+ramp_interval: 1   # time interval between changing the setpoint during a ramp
+history_length: 600  # points of temperature history stored in the memory
+update_interval: 5   # time interval between each read
+
+devices:
+  - name: SodiumCup(T1)
+    dev_type: Omega iSeries Ethernet
+    addr: 192.168.12.200
+    port: 2000
+  - name: Flange(T2)
+    dev_type: Omega iSeries Ethernet
+    addr: 192.168.12.201
+    port: 2000
+  - name: RepumpViewPort
+    dev_type: Omega iSeries Ethernet
+    addr: 192.168.12.202
+    port: 2000
+
+programs:
+  - name: Oven Ramp Up
+    description: Ramp the sodium oven temperature to 230 °C in around 2 hours
+    steps:
+      - - action: LINEAR_RAMP
+          device: SodiumCup(T1)
+          params:
+            TARGET_TEMP: 215
+            RATE: 1.75
+        - action: LINEAR_RAMP
+          device: Flange(T2)
+          params:
+            TARGET_TEMP: 260
+            RATE: 2
+  - name: Oven Cool Down
+    description: Cool the sodium oven down to 20 °C in 100 minutes
+    steps:
+      - - action: LINEAR_RAMP
+          device: SodiumCup(T1)
+          params:
+            TARGET_TEMP: 20
+            RATE: 2
+        - action: LINEAR_RAMP
+          device: Flange(T2)
+          params:
+            TARGET_TEMP: 20
+            RATE: 2.4
+      - - action: STANDBY
+          device: SodiumCup(T1)
+        - action: STANDBY
+          device: Flange(T2)
