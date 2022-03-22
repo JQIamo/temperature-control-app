@@ -17,7 +17,7 @@ async def run_ws_server():
     global app_manager
     assert isinstance(app_manager, TemperatureAppCore)
 
-    ws_server = WebSocketServer("", 3001, logger)
+    ws_server = WebSocketServer("*", 3001, logger)
 
     async def subscribe_event_handler(event, handler):
         app_manager.subscribe_to(event['subscribe_to'],
@@ -46,20 +46,16 @@ def run_http_server():
     assert isinstance(logger, logging.Logger)
 
     def get_websocket(request):
-        if 'websocket_access_addr' in config:
-            ret = json.dumps({
-                'websocket_addr': config['websocket_access_addr']
-            })
-        else:
-            ret = json.dumps({
-                'websocket_addr': "ws://localhost:3001"
-            })
+        ret = json.dumps({
+            'websocket_addr': config.get('websocket_access_addr', default="ws://localhost:3001")
+        })
+        print(ret)
 
         return 200, 'application/json', ret
 
     directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web/build/")
 
-    serve_http("", 8000, directory, { 'websocket' : get_websocket }, logger)
+    serve_http("", 8000, directory, { '/websocket' : get_websocket }, logger)
 
 
 async def run(serve_http=True):
@@ -67,9 +63,9 @@ async def run(serve_http=True):
 
     parser = argparse.ArgumentParser(description="Temperature web control app.")
 
-    parser.add_argument("-c", "--config", dest="config", type=str,
+    parser.add_argument("-c", "--config", dest="config", type=str, required=True,
                         help="path to the config yaml file")
-    parser.add_argument("-v", "--verbose", dest="verbose", type=bool,
+    parser.add_argument("-v", "--verbose", dest="verbose", action='store_true',
                         help="turn on the verbose logging mode")
     args = parser.parse_args()
 

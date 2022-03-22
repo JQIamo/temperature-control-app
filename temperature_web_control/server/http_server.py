@@ -16,14 +16,17 @@ def serve_http(bind_addr, port, _directory, get_handler, logger: Logger):
             if request_path in get_request_handler:
                 resp_code, type, resp = get_request_handler[request_path](self)
                 self.send_response(resp_code)
-                self.send_header('content-type', type)
+                self.send_header('Content-type', type)
                 self.end_headers()
-                self.wfile.write(resp)
+                self.wfile.write(resp.encode("utf-8"))
             else:
                 super().do_GET()
 
     if get_handler:
-        get_request_handler = get_request_handler
+        get_request_handler = get_handler
     with TCPServer((bind_addr, port), HTTPRequestHandler) as httpd:
         logger.info(f"Start HTTP server at {bind_addr}:{port}.")
-        httpd.serve_forever()
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            pass
