@@ -1,5 +1,6 @@
 import React from 'react';
 import {Card, Accordion, Form, Container, Button} from "react-bootstrap";
+import {CheckSquare} from "react-bootstrap-icons";
 
 
 class QuickActionAccordionItem extends React.Component {
@@ -98,7 +99,7 @@ class QuickActionAccordionItem extends React.Component {
  function QuickActionCard(props){
      return (
          <Card className="mb-3">
-             <Card.Header> Quick Actions </Card.Header>
+             <Card.Header> <CheckSquare /> Quick Actions </Card.Header>
              <Accordion>
                  {
                      Object.values(props.actionLookup ? props.actionLookup : {}).map((action, i) => {

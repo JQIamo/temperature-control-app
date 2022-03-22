@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Button, Card, ListGroup, ListGroupItem } from 'react-bootstrap'
-import { CaretRightFill, StopFill } from 'react-bootstrap-icons';
+import {CardChecklist, CaretRightFill, StopFill} from 'react-bootstrap-icons';
 
 function RunButton(props) {
     return (
@@ -69,7 +69,7 @@ function ProgramsCard(props) {
 
     return (
         <Card className="mb-3">
-            <Card.Header> Programs </Card.Header>
+            <Card.Header> <CardChecklist /> Programs </Card.Header>
             <ListGroup > { programListElements } </ListGroup>
         </Card>
     );

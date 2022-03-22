@@ -1,6 +1,7 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
 import Card from 'react-bootstrap/Card'
+import {GraphUp} from "react-bootstrap-icons";
 
 function HistoryCard(props) {
     const layout = {
@@ -31,7 +32,7 @@ function HistoryCard(props) {
     };
     return (
         <Card className="mb-3 border-info">
-            <Card.Header> History </Card.Header>
+            <Card.Header> <GraphUp /> History </Card.Header>
             <Plot
                 data={props.data}
                 layout={layout}

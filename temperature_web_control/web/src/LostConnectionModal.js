@@ -1,4 +1,5 @@
 import {Modal, Container, Spinner, Button} from "react-bootstrap";
+import {ArrowClockwise, WifiOff} from "react-bootstrap-icons";
 
 function LostConnectionModal(props) {
     return (
@@ -8,7 +9,7 @@ function LostConnectionModal(props) {
             keyboard={false}
         >
             <Modal.Header>
-                <Modal.Title>Lost connection</Modal.Title>
+                <Modal.Title><WifiOff /> Lost connection</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <p>Lost connection to the server.</p>
@@ -21,7 +22,7 @@ function LostConnectionModal(props) {
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="secondary" onClick={() => {window.location.reload();}}>
-                    Reload
+                    <ArrowClockwise /> Reload
                 </Button>
             </Modal.Footer>
         </Modal>

@@ -3,6 +3,7 @@ import React from 'react';
 import Card from 'react-bootstrap/Card'
 import Badge from "react-bootstrap/Badge";
 import Button from "react-bootstrap/Button";
+import {Thermometer, GraphUp} from "react-bootstrap-icons";
 
 function StopButton(props) {
     return (
@@ -71,7 +72,7 @@ function StatusCard(props) {
     return (
         <Card className={stateStyle + " mb-3"}>
             <Card.Header className="text-white">
-                {props.name}
+                <Thermometer /> {props.name}
                 <Badge className={badgeStyle + " mx-2"}>
                     {badgeText}
                 </Badge>
