@@ -2,6 +2,14 @@
 
 _Access and monitor your favorite temperature controllers from your browser._
 
+### Supported devices
+
+Currently, supports
+- `Omega iSeries Ethernet`: Omega iSeries controller, with Ethernet connection
+- `Omega iSeries Serial`: Omega iSeries controller, with Serial connection
+- 
+Support for more devices can be easily added. Pull requests are welcomed!
+
 ![Screenshot](screenshot.jpg)
 
 A web app that gathers data from temperature controllers and posts them to a
@@ -63,6 +71,9 @@ venv/bin/temperature_app --config [path to config]
 ```
 The format of the configuration file will be introduced in the next section.
 
+If you stick to the default settings, you should be able to access the web app via 
+[http://{your ip address}:8000](http://localhost:8000).
+
 ## Configuration
 
 The configuration file is in [YAML](https://yaml.org/) format. Here in this
@@ -72,6 +83,40 @@ repo, I present two sample configuration file [config_dummy.yml](config_dummy.ym
 
 The configuration file is more or less self-explanatory. There's a few fields
 defines some time constants.
+
+### Network
+
+The _network_ section define the address and ports the server binds to.
+The http port is for accessing the web app. Internally, the web app communicates
+with the server via [WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API),
+The WebSockets backend also needs a port to bind to.
+
+Network settings can be confusing. I recommend just keep the default settings untouched, all
+except the line `websocket_access_addr: ws://192.168.12.26:3001/` below. **In order to make the
+web app connects to the WebSockets backend, you need to replace `192.168.12.26` with the server's
+own ip address.**
+
+Also, you need to set your firewall to allow incoming connection to port `8000` and `3001`.
+
+```yaml
+# binding to 0.0.0.0 means listening to all incoming connection, whereas
+# binding to 127.0.0.1 will only accept connection from localhost
+bind_addr: 0.0.0.0
+
+# the port that serves the web server. In this case, the app can be accessed
+#  via http://localost:8000
+http_port: 8000
+
+websocket_port: 3001
+
+# == IMPORTANT: need to change 192.168.12.26 to your ip address ==
+websocket_access_addr: ws://192.168.12.26:3001/
+```
+
+General guidelines for deploying web apps include _don't expose http services on a lot of ports,
+[use a reverse proxy instead](https://www.linode.com/docs/guides/use-nginx-reverse-proxy/)._
+[WebSockets endpoints can also be reverse-proxied](https://www.nginx.com/blog/websocket-nginx/).
+In general, if you are good at dealing with http server, I would suggest you do this.
 
 ### Devices
 
