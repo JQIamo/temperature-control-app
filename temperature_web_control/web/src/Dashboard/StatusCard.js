@@ -65,8 +65,8 @@ function StatusCard(props) {
         }
     }
 
-    const temperature = props.temperature ? props.temperature.toFixed(1) : "--.--";
-    const setpoint = props.setpoint ? props.setpoint.toFixed(1) : "--.--";
+    const temperature = props.temperature != null ? props.temperature.toFixed(1) : "--.--";
+    const setpoint = props.setpoint != null ? props.setpoint.toFixed(1) : "--.--";
 
 
     return (
