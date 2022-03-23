@@ -31,9 +31,9 @@ class SerialDevice(IODevice):
 
         return data
 
-
-    def reset(self):
+    def reset(self, wait=0.5):
         self.ser.close()
+        time.sleep(wait)
         self.ser = serial.Serial(self.port, self.baudrate, self.timeout, parity=self.parity)
 
     def __del__(self):

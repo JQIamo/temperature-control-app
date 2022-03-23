@@ -15,5 +15,5 @@ class IODevice(ABC):
         return self.recv(max_len)
 
     @abstractmethod
-    def reset(self):
+    def reset(self, wait=0.5):
         pass

@@ -33,9 +33,9 @@ class EthernetDevice(IODevice):
 
         return data
 
-    def reset(self):
+    def reset(self, wait=0.5):
         self.socket.close()
-        time.sleep(0.5)
+        time.sleep(wait)
         self.socket = socket.create_connection((self.addr, self.port), timeout=5)
 
     def __del__(self):

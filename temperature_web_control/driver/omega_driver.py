@@ -21,7 +21,7 @@ def retry_wrap(func):
                 self.logger.error("OmegaISeries: Encountered communication error:")
                 self.logger.exception(e)
                 self.logger.error(f"OmegaISeries: Retrying, {i+1} of {retry} times...")
-                self.reset()
+                self.reset(wait=(i+1) * 0.5)
                 _e = e
                 pass
 
@@ -73,8 +73,8 @@ class OmegaISeries(TemperatureMonitor):
 
         self.retry = 5
 
-    def reset(self):
-        self.io_dev.reset()
+    def reset(self, wait=0.5):
+        self.io_dev.reset(wait)
 
     @staticmethod
     def get_ethernet_instance(logger, name, addr, port, output=1, interval=1):
