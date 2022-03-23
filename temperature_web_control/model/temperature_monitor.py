@@ -43,10 +43,6 @@ class TemperatureMonitor(ABC):
     def setpoint(self, value):
         raise NotImplementedError
 
-    @abstractmethod
-    def stop_program_immediately(self):
-        raise NotImplementedError
-
     # ==== Other options ====
     @property
     @abstractmethod

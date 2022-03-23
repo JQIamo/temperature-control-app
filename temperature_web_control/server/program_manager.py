@@ -153,12 +153,12 @@ class ProgramManager:
         ramp_interval = self.config.get('ramp_interval', default=1)  # in minutes
         last_temp = device.temperature
         delta = target - last_temp
-        ramp_time = delta / rate  # in minutes
         if delta < 0:
             rate = -1 * abs(rate)
         else:
             rate = abs(rate)
 
+        ramp_time = delta / rate  # in minutes
         device.control_enabled = True
 
         for i in float_range(0, ramp_time, ramp_interval):
@@ -166,7 +166,7 @@ class ProgramManager:
 
             next_temp = ramp_interval * rate + last_temp
 
-            if next_temp > target:
+            if (delta > 0 and next_temp > target) or (delta < 0 and next_temp < target):
                 next_temp = target
 
             if int(next_temp * 10) != int(last_temp * 10):

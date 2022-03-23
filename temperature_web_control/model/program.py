@@ -27,7 +27,7 @@ actions = {
         "Linearly ramp up/down the temperature.",
         [
             ("TARGET_TEMP", "Target temperature."),
-            ("RATE", "Temperature raise per minute.")
+            ("RATE", "Temperature raise/drop per minute.")
         ],
         True,
         True,
