@@ -9,7 +9,7 @@ from temperature_web_control.server.http_server import serve_http
 from temperature_web_control.utils import Config
 from temperature_web_control.plugin import plugins
 
-config = {}
+config: Config = None
 app_manager: TemperatureAppCore = None
 logger = None
 
@@ -17,7 +17,10 @@ async def run_ws_server():
     global app_manager
     assert isinstance(app_manager, TemperatureAppCore)
 
-    ws_server = WebSocketServer("*", 3001, logger)
+    ws_server = WebSocketServer(
+        config.get("bind_addr", default="0.0.0.0"),
+        int(config.get("websocket_port", default=3001)),
+        logger)
 
     async def subscribe_event_handler(event, handler):
         app_manager.subscribe_to(event['subscribe_to'],
@@ -55,7 +58,10 @@ def run_http_server():
 
     directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web/build/")
 
-    serve_http("", 8000, directory, { '/websocket' : get_websocket }, logger)
+    serve_http(
+        config.get("bind_addr", default="0.0.0.0"),
+        int(config.get("http_port", default=8000)),
+        directory, { '/websocket' : get_websocket }, logger)
 
 
 async def run(serve_http=True):

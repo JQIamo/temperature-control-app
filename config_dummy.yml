@@ -1,3 +1,14 @@
+# binding to 0.0.0.0 means listening to all incoming connection, whereas
+# binding to 127.0.0.1 will only accept connection from localhost
+bind_addr: 0.0.0.0
+
+# the port that serves the web server. In this case, the app can be accessed
+#  via http://localost:8000
+# http_port: 8000
+
+# websocket_port: 3001
+websocket_access_addr: ws://192.168.12.26:3001/  # IMPORTANT: need to change 192.168.12.26 to your ip address
+
 ramp_interval: 1   # time interval between changing the setpoint during a ramp
 history_length: 600  # points of temperature history stored in the memory
 update_interval: 5   # time interval between each read
