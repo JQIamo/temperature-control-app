@@ -22,7 +22,7 @@ class build_ext(build_ext_orig):
 
 setuptools.setup(
     name='temperature-control-app',
-    version='1.0',
+    version='1.1',
     url='https://github.com/JQIamo/temperature-control-app',
     license='MIT License',
     author='Yanda Geng',
