@@ -75,6 +75,7 @@ class ProgramManager:
                 return
 
             pointer = 0
+            step_tasks = []
 
             try:
                 loop_counters = {}
@@ -130,13 +131,19 @@ class ProgramManager:
                     # let user know the program is running before doing time-consuming jobs
                     await self.update_state_callback()
 
-                    await asyncio.gather(*coroutines)
+                    # Why not gather coroutines instead, see interesting discussion
+                    # https://stackoverflow.com/a/59074112/1584825
+                    step_tasks = [asyncio.create_task(coro) for coro in coroutines]
+                    await asyncio.gather(*step_tasks)
 
                     pointer += 1
 
             except asyncio.CancelledError:
                 await self.update_state_callback()
             finally:
+                for t in step_tasks:
+                    t.cancel()
+
                 self.current_programs.remove(program)
                 del self.current_step[program.name]
 
@@ -150,29 +157,32 @@ class ProgramManager:
             await self.error_callback(e)
 
     async def linear_ramp(self, device: TemperatureMonitor, target, rate):
-        ramp_interval = self.config.get('ramp_interval', default=1)  # in minutes
-        last_temp = device.temperature
-        delta = target - last_temp
-        if delta < 0:
-            rate = -1 * abs(rate)
-        else:
-            rate = abs(rate)
+        try:
+            ramp_interval = self.config.get('ramp_interval', default=1)  # in minutes
+            last_temp = device.temperature
+            delta = target - last_temp
+            if delta < 0:
+                rate = -1 * abs(rate)
+            else:
+                rate = abs(rate)
 
-        ramp_time = delta / rate  # in minutes
-        device.control_enabled = True
+            ramp_time = delta / rate  # in minutes
+            device.control_enabled = True
 
-        for i in float_range(0, ramp_time, ramp_interval):
-            await asyncio.sleep(0)  # A chance to stop the program
+            for i in float_range(0, ramp_time, ramp_interval):
+                await asyncio.sleep(0)  # A chance to stop the program
 
-            next_temp = ramp_interval * rate + last_temp
+                next_temp = ramp_interval * rate + last_temp
 
-            if (delta > 0 and next_temp > target) or (delta < 0 and next_temp < target):
-                next_temp = target
+                if (delta > 0 and next_temp > target) or (delta < 0 and next_temp < target):
+                    next_temp = target
 
-            if int(next_temp * 10) != int(last_temp * 10):
-                device.setpoint = next_temp
-            last_temp = next_temp
-            await asyncio.sleep(ramp_interval * 60)
+                if int(next_temp * 10) != int(last_temp * 10):
+                    device.setpoint = next_temp
+                last_temp = next_temp
+                await asyncio.sleep(ramp_interval * 60)
+        except asyncio.CancelledError:
+            pass
 
     async def change_temperature(self, device: TemperatureMonitor, target):
         tolerance = self.config.get('temperature_tolerance', default=1)  # in degrees
