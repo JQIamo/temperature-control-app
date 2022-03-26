@@ -82,14 +82,16 @@ class Program:
     def _calculate_occupied_devices(self):
         for step in self.steps:
             for action in step:
-                if action.device not in self.occupied_device:
+                if action.device and action.device not in self.occupied_device:
                     self.occupied_device.append(action.device)
 
     @staticmethod
     def from_dict(steps_dict: dict):
         steps = [
             [
-                Action(action['action'], action['device'], action['params'] if 'params' in action else None)
+                Action(action['action'],
+                       action['device'] if 'device' in action else None,
+                       action['params'] if 'params' in action else None)
                 for action in step ]
             for step in steps_dict['steps']
         ]

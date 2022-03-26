@@ -119,8 +119,9 @@ class ProgramManager:
                             loop_times = int(action.params['TIMES'])
                             if pointer not in loop_counters:
                                 loop_counters[pointer] = 0
+
+                            loop_counters[pointer] += 1
                             if loop_counters[pointer] < loop_times:
-                                loop_counters[pointer] += 1
                                 pointer = target_action - 1  # there a +1 at the end of the while body
                             else:
                                 del loop_counters[pointer]

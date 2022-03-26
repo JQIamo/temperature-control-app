@@ -9,9 +9,10 @@ bind_addr: 0.0.0.0
 # websocket_port: 3001
 websocket_access_addr: ws://192.168.12.26:3001/  # IMPORTANT: need to change 192.168.12.26 to your ip address
 
-ramp_interval: 1   # time interval between changing the setpoint during a ramp
+ramp_interval: 0.05   # time interval between changing the setpoint during a ramp
 history_length: 600  # points of temperature history stored in the memory
 update_interval: 5   # time interval between each read
+temperature_tolerance: 5  # applies to CHANGE, wait until temperature falls within this range before proceeding to next step
 
 devices:
   - name: Dummy01
@@ -22,19 +23,31 @@ devices:
     fluctuation: 5
 
 programs:
-  - name: Ramp
+  - name: Ramp and Loop
     description: Do some ramp
     steps:
       - - action: LINEAR_RAMP
           device: Dummy01
           params:
             TARGET_TEMP: 50
-            RATE: 50
+            RATE: 200
         - action: LINEAR_RAMP
           device: Dummy02
           params:
             TARGET_TEMP: 75
-            RATE: 75
+            RATE: 300
+      - - action: CHANGE
+          device: Dummy01
+          params:
+            SETPOINT: 0
+        - action: CHANGE
+          device: Dummy02
+          params:
+            SETPOINT: 0
+      - - action: LOOP
+          params:
+            GOTO: 0
+            TIMES: 5
       - - action: SOAK
           device: Dummy01
           params:
