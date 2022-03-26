@@ -61,7 +61,11 @@ programs:
 
 influx_plugin:
   influx_api_url: http://jqi-logger.physics.umd.edu:8086/
+  # if you use token for authorization
   token: {your secret token}
+  # or if you use username and password
+  # user:
+  # password:
   database: naer_db
   measurement: NaOven_readings
   push_interval: 0.25  # 1/4 min = 15 s

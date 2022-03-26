@@ -7,7 +7,7 @@ _Access and monitor your favorite temperature controllers from your browser._
 Currently, supports
 - `Omega iSeries Ethernet`: Omega iSeries controller, with Ethernet connection
 - `Omega iSeries Serial`: Omega iSeries controller, with Serial connection
-- 
+ 
 Support for more devices can be easily added. Pull requests are welcomed!
 
 ![Screenshot](screenshot.jpg)
@@ -137,7 +137,13 @@ parameters.
 
 Currently, supports
 - `Omega iSeries Ethernet`: Omega iSeries controller, with Ethernet connection
+  - Configuration:
+    - `addr`: IP/Hostname of the controller.
+    - `port`: Port, should be 2000 by default.
 - `Omega iSeries Serial`: Omega iSeries controller, with Serial connection
+   - Configuration:
+      - `port`: Serial port the controller connects to, like `COM1`.
+      - `baudrate`: Should be 9600 by default.
 
 More devices can be easily added. See the following sections.
 
