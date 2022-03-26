@@ -40,15 +40,17 @@ class WebSocketServer:
         except (websockets.ConnectionClosed, websockets.ConnectionClosedOK, websockets.ConnectionClosedError):
             self.logger.info(f"WSServer: Connection to client "
                               f"{websocket.remote_address[0]}:{websocket.remote_address[1]} closed.")
-            if 'disconnected' in self.event_handlers:
-                await self.event_handlers['disconnected']({
-                    'event': 'disconnected',
-                    '_client_ws': websocket
-                }, None)
         finally:
             self.logger.info(f"WSServer: Remove client "
                              f"{websocket.remote_address[0]}:{websocket.remote_address[1]} from the broadcast list.")
             self.active_ws.remove(websocket)
+            if 'disconnected' in self.event_handlers:
+                event = {
+                    'event': 'disconnected',
+                    '_client_ws': websocket
+                }
+
+                await asyncio.gather(*[handler(event, None) for handler in self.event_handlers['disconnected']])
 
     async def send(self, websocket, message_dict):
         try:

@@ -117,9 +117,10 @@ class TemperatureAppCore:
 
     def unsubscribe_to_all(self, subscriber):
         self.logger.info(f"AppCore: {subscriber} unsubscribes to all events.")
-        for event, subscriber_grp in self.subscribers:
-            if subscriber in subscriber_grp.subscribers:
-                subscriber_grp.subscribers.remove(subscriber)
+        for event, subscriber_grps in self.subscribers.items():
+            for subscriber_grp in subscriber_grps.values():
+                if subscriber in subscriber_grp.subscribers:
+                    subscriber_grp.subscribers.remove(subscriber)
             self._purge_empty_subscriber_groups(event)
 
     def _purge_empty_subscriber_groups(self, event_name):
