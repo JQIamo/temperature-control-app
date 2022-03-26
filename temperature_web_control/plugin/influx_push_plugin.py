@@ -1,7 +1,7 @@
 import time
-from typing import Union
-
 import requests
+import base64
+from typing import Union
 from logging import Logger
 
 from temperature_web_control.plugin.plugin_base import PluginState
@@ -24,7 +24,14 @@ class InfluxPushPluginState(PluginState):
         self.app_core = app_core
         self.logger = logger
 
-        self.auth = TokenAuth(self.config.get("influx_plugin", "token"))
+        token = self.config.get("influx_plugin", "token", default=None)
+        if not token:
+            user = self.config.get("influx_plugin", "user")
+            password = self.config.get("influx_plugin", "password")
+
+            token = base64.b64decode(f"{user}:{password}".encode("utf-8"))
+
+        self.auth = TokenAuth(token)
         self.url = self.config.get("influx_plugin", "influx_api_url")
         self.database =self.config.get("influx_plugin", "database")
         self.measurement = self.config.get("influx_plugin", "measurement")
