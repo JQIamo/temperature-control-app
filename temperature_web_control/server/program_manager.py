@@ -53,6 +53,10 @@ class ProgramManager:
             if program in self.current_programs:
                 raise TemperatureProgramException(f"Program {program.name} is running.")
 
+            if len(program.steps) == 0:
+                raise TemperatureProgramException(
+                    f"Program {program.name} is empty")
+
             if not program.occupied_device:
                 raise TemperatureProgramException(f"No device specified.")
 
@@ -70,9 +74,6 @@ class ProgramManager:
                 self.current_dev_program[dev] = program
 
             self.current_programs.append(program)
-
-            if len(program.steps) == 0:
-                return
 
             pointer = 0
             step_tasks = []
