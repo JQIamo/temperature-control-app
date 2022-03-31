@@ -59,7 +59,7 @@ class InfluxPushPluginState(PluginState):
                 req.append(f"{self.measurement} {dev['name']}={dev['temperature']:.1f},{dev['name']}_units=\"C\" {t}")
                 self.logger.debug(f"Influx Push Plugin: Request {req}")
 
-            r = requests.post(req_url, data="\n".join(req), auth=self.auth)
+            r = requests.post(req_url, data="\n".join(req), auth=self.auth, timeout=3)
 
             r.raise_for_status()
         except Exception as e:
