@@ -134,8 +134,17 @@ class TemperatureAppCore:
         if event not in self.subscribers:
             return
 
+        tasks = []
         for subscriber_grp in self.subscribers[event].values():
-            await subscriber_grp.message_handler(subscriber_grp.subscribers, message)
+            tasks.append(asyncio.create_task(subscriber_grp.message_handler(subscriber_grp.subscribers, message)))
+
+        if tasks:
+            (done, pending) = await asyncio.wait(tasks, timeout=10)
+
+            if pending:
+                for unfinished in pending:
+                    unfinished.cancel()
+                    await self.fire_program_error(f"Timeout executing event handler {unfinished}")
 
     async def monitor_status(self):
         self.logger.info("AppCore: Monitor start")

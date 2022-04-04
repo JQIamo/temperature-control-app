@@ -107,7 +107,10 @@ async def run(serve_http=True):
 
     try:
         coroutines = [run_ws_server(), app_manager.monitor_status()] + plugin_coroutine
-        await asyncio.gather(*coroutines)  # block forever
+        for coro in coroutines:
+            asyncio.create_task(coro)
+
+        await asyncio.Future()  # block forever
     except KeyboardInterrupt:
         pass
 
