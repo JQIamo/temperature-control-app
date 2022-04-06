@@ -26,9 +26,9 @@ class WebSocketServer:
         self.active_ws.append(websocket)
         try:
             async for message in websocket:
-                self.logger.debug(f"WSServer: Incoming message from "
+                self.logger.info(f"WSServer: Incoming message from "
                                   f"{websocket.remote_address[0]}:{websocket.remote_address[1]}.")
-                self.logger.debug(message)
+                self.logger.info(message)
 
                 event = json.loads(message)
 

@@ -17,7 +17,8 @@ class TemperatureProgramException(Exception):
 
 
 class ProgramManager:
-    def __init__(self, config: Config, device_instances, update_state_callback, error_callback):
+    def __init__(self, config: Config, device_instances, update_state_callback, error_callback, logger):
+        self.logger = logger
         self.config = config
         self.dev_instances = device_instances
         self.current_programs = []
@@ -87,6 +88,8 @@ class ProgramManager:
                     occupied_device_in_step = []
                     coroutines = []
 
+                    self.logger.info(f"Program: Running program {program.name}, step {pointer}.")
+
                     for action in step:
                         device = None
                         if action.device:
@@ -97,6 +100,8 @@ class ProgramManager:
                             device = self.dev_instances[action.device]
                             occupied_device_in_step.append(action.device)
                             self.current_dev_action[action.device] = action
+
+                            self.logger.info(f"Program: To execute {action.name} to device {device.name}")
 
                         if action.name == "CHANGE":
                             coroutines.append(self.change_temperature(device,
@@ -136,11 +141,14 @@ class ProgramManager:
                     # Why not gather coroutines instead, see interesting discussion
                     # https://stackoverflow.com/a/59074112/1584825
                     step_tasks = [asyncio.create_task(coro) for coro in coroutines]
+                    self.logger.info(f"Program: Executing actions...")
                     await asyncio.gather(*step_tasks)
 
                     pointer += 1
 
-            except asyncio.CancelledError:
+            except asyncio.CancelledError as e:
+                self.logger.info("Program: Cancel occurs in program.")
+                self.logger.exception(e)
                 await self.update_state_callback()
             finally:
                 for t in step_tasks:

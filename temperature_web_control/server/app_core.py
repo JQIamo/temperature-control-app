@@ -75,7 +75,8 @@ class TemperatureAppCore:
         self.program_manager = ProgramManager(config, self.dev_instances,
                                               lambda: asyncio.gather(self.update_status_and_fire_event(),
                                                                      self.fire_control_changed_event()),
-                                              self.fire_program_error)
+                                              self.fire_program_error,
+                                              logger)
         history_len = config.get('history_length', default=1000)
         self.history = TemperatureHistory(history_len, self.dev_instances)
         self.subscribe_to('status_available', self.history, self.history.status_update_handler)
