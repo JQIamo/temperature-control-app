@@ -68,7 +68,6 @@ class OmegaISeries(TemperatureMonitor):
         super().__init__(name)
         self.logger = logger
         self.io_dev = io_dev
-        self.query_lock = Lock()
         self.echo_enabled = self._check_echo_enable()
         self.unit = self._check_unit()
         self.run = False
@@ -260,27 +259,23 @@ class OmegaISeries(TemperatureMonitor):
         return "C" if unit == 0 else "F"
 
     def query(self, cmd: str, max_len=-1) -> str:
-        # To be honest, using coroutine should avoid conflicts
-        # but somehow I noticed competition of different coroutines(?) enter this method
-        # at the same time. I don't know why. Maybe I should do more tests.
-        with self.query_lock:
-            ret = self.io_dev.query(cmd.encode("utf-8") + b"\r", max_len).strip()
-            if not ret:
-                return ""
+        ret = self.io_dev.query(cmd.encode("utf-8") + b"\r", max_len).strip()
+        if not ret:
+            return ""
 
-            ret_str = ret.decode("utf-8").strip()
+        ret_str = ret.decode("utf-8").strip()
 
-            if ret_str[0] == '?':
-                raise OmegaControllerError(cmd, ret_str)
+        if ret_str[0] == '?':
+            raise OmegaControllerError(cmd, ret_str)
 
 
-            if self.echo_enabled:
-                prefix = cmd[1:4]
-                if ret_str[0:len(cmd) - 1] != prefix:
-                    raise OmegaControllerError(cmd, None)
+        if self.echo_enabled:
+            prefix = cmd[1:4]
+            if ret_str[0:len(cmd) - 1] != prefix:
+                raise OmegaControllerError(cmd, None)
 
-                return ret_str[len(cmd) - 1:]  # -1: get rid of *
-            return ret_str
+            return ret_str[len(cmd) - 1:]  # -1: get rid of *
+        return ret_str
 
     def send(self, cmd):
         if self.echo_enabled:
