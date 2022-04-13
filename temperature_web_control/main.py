@@ -75,7 +75,7 @@ async def run(serve_http=True):
                         help="turn on the verbose logging mode")
     args = parser.parse_args()
 
-    logger = logging.getLogger("root")
+    logger = logging.getLogger("temperature_app")
     handler = logging.StreamHandler()
     if args.verbose:
         logger.setLevel(logging.DEBUG)

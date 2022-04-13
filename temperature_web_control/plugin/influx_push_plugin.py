@@ -56,6 +56,9 @@ class InfluxPushPluginState(PluginState):
 
             req = []
             for dev in status.values():
+                if 'temperature' not in dev:
+                    pass
+
                 req.append(f"{self.measurement} {dev['name']}={dev['temperature']:.1f},{dev['name']}_units=\"C\" {t}")
 
             self.logger.debug(f"Influx Push Plugin: Request {req}")

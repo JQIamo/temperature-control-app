@@ -7,11 +7,16 @@ from temperature_web_control.driver.io_device import IODevice
 from temperature_web_control.driver.serial_device import SerialDevice
 from temperature_web_control.model.temperature_monitor import TemperatureMonitor, Option
 
+retry = 5
+
+class OmegaNetworkError(Exception):
+    def __init__(self, error):
+        super().__init__(f"Error occurred when communicating with controller: {error}")
+
 
 def retry_wrap(func):
     @wraps(func)
     def _func(self, *args, **kwargs):
-        retry = 5
         _e = None
 
         for i in range(retry):
@@ -25,12 +30,12 @@ def retry_wrap(func):
                 _e = e
                 pass
 
-        raise _e
+        raise OmegaNetworkError(_e)
 
     return _func
 
 
-class OmegaCommunicationError(Exception):
+class OmegaControllerError(Exception):
     def __init__(self, cmd: str, error_response = None):
         super().__init__(f"Received {self.error_to_msg(error_response)} while sending command {cmd}.")
 
@@ -234,7 +239,7 @@ class OmegaISeries(TemperatureMonitor):
         _ret = self.io_dev.query(cmd.encode("utf-8")).strip()
         ret = _ret.decode("utf-8")
         if _ret[0] == '?':
-            raise OmegaCommunicationError(cmd, _ret)
+            raise OmegaControllerError(cmd, _ret)
 
         if ret[0] == "R":
             ret = ret[3:]
@@ -266,13 +271,13 @@ class OmegaISeries(TemperatureMonitor):
             ret_str = ret.decode("utf-8").strip()
 
             if ret_str[0] == '?':
-                raise OmegaCommunicationError(cmd, ret_str)
+                raise OmegaControllerError(cmd, ret_str)
 
 
             if self.echo_enabled:
                 prefix = cmd[1:4]
                 if ret_str[0:len(cmd) - 1] != prefix:
-                    raise OmegaCommunicationError(cmd, None)
+                    raise OmegaControllerError(cmd, None)
 
                 return ret_str[len(cmd) - 1:]  # -1: get rid of *
             return ret_str
@@ -295,6 +300,10 @@ def dev_types():
 
 
 def from_config_dict(config_dict: dict, logger):
+    global retry
+    if 'retry_limit' in config_dict:
+        retry = int(config_dict['retry_limit'])
+
     if config_dict['dev_type'] == 'Omega iSeries Ethernet':
         return OmegaISeries.get_ethernet_instance(
             logger,
