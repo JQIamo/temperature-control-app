@@ -451,6 +451,12 @@ class SendEmailAction(AlertAction):
 
     @staticmethod
     def create_from_config(config, app_core, logger):
+        _config = {}
+        _config.update(email_config_dict)
+        _config.update(config)
+
+        config = _config
+
         assert 'sender' in config, "Missing parameter"
         assert SendEmailAction.validate_email_addr(config['sender']), "Invalid email address"
         sender = config['sender']
@@ -568,6 +574,8 @@ alert_action_mapping = {
     'send_email': SendEmailAction
 }
 
+email_config_dict = {}
+
 
 class AlertPluginState(PluginState):
     def __init__(self, config: Config, app_core: TemperatureAppCore, logger: Logger):
@@ -653,6 +661,8 @@ class AlertPluginState(PluginState):
 
 async def initialize(config: Config, app_core: TemperatureAppCore, logger: Logger) -> Union[PluginState, None]:
     if config.get("alerts", default=None):
+        email_config_dict.update(config.get("alert_email_settings", default={}))
+
         plugin = AlertPluginState(config, app_core, logger)
         return plugin
     else:
