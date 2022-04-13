@@ -31,7 +31,7 @@ class ProgramManager:
         self.update_state_callback = update_state_callback
         self.error_callback = error_callback
 
-    async def abort_program(self, program_name):
+    def abort_program(self, program_name):
         try:
             program = next(filter(lambda p: p.name == program_name, self.current_programs))
         except StopIteration as e:
@@ -39,8 +39,14 @@ class ProgramManager:
 
         if not self.current_program_task[program_name].cancelled():
             self.current_program_task[program_name].cancel()
-        else:
-            self.current_program_task[program_name] = None
+            del self.current_program_task[program_name]
+
+    def abort_all_programs(self):
+        for program in self.current_programs:
+            program_name = program.name
+            if not self.current_program_task[program_name].cancelled():
+                self.current_program_task[program_name].cancel()
+                del self.current_program_task[program_name]
 
     def create_program_task(self, program: Program):
         if program in self.current_programs:
@@ -164,7 +170,7 @@ class ProgramManager:
 
                 await self.update_state_callback()
         except Exception as e:
-            await self.error_callback(e)
+            await self.error_callback(f"Encounter error when executing {program.name}: {str(e)}")
 
     async def linear_ramp(self, device: TemperatureMonitor, target, rate):
         try:

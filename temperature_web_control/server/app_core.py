@@ -197,13 +197,16 @@ class TemperatureAppCore:
         await self._return_ok(callback, {'status': status})
 
     async def _return_error(self, callback, error_msg):
-        await callback({"result": "error", "error_msg": error_msg})
+        if callback:
+            await callback({"result": "error", "error_msg": error_msg})
 
     async def _return_ok(self, callback, message=None):
-        result = {"result": "ok"}
-        if message:
-            result.update(message)
-        await callback(result)
+        if callback:
+            result = {"result": "ok"}
+            if message:
+                result.update(message)
+
+            await callback(result)
 
     @async_wrap
     def gather_dev_status(self, dev):
@@ -254,7 +257,7 @@ class TemperatureAppCore:
 
     async def on_abort_program_event(self, event, callback):
         self.logger.debug(f"AppCore: Received event: abort_program.")
-        await self.program_manager.abort_program(event["program"])
+        self.program_manager.abort_program(event["program"])
         await self._return_ok(callback)
 
     async def on_current_programs_event(self, event, callback):
