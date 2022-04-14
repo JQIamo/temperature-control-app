@@ -51,7 +51,7 @@ class OmegaControllerError(Exception):
             elif error_response == '?56':
                 return "Serial Device Address Error"
             err_str = error_response.decode("utf-8")
-            return f"Unknown error {err_str}"
+            return f"Error: {err_str}"
         return f"Unknown error"
 
 
@@ -270,7 +270,7 @@ class OmegaISeries(TemperatureMonitor):
         if self.echo_enabled:
             prefix = cmd[1:4]
             if ret_str[0:len(cmd) - 1] != prefix:
-                raise OmegaControllerError(cmd, None)
+                raise OmegaControllerError(cmd, "Prefix doesn't match")
 
             return ret_str[len(cmd) - 1:]  # -1: get rid of *
         return ret_str
