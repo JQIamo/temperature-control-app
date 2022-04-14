@@ -6,6 +6,7 @@ from temperature_web_control.driver.io_device import IODevice
 
 class SerialDevice(IODevice):
     def __init__(self, port, baudrate, terminator=b'\r', parity='N', timeout=1, interval=0.3):
+        super().__init__()
         self.terminator = terminator
         self.port = port
         self.baudrate = baudrate

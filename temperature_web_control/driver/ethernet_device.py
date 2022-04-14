@@ -6,6 +6,7 @@ from temperature_web_control.driver.io_device import IODevice
 
 class EthernetDevice(IODevice):
     def __init__(self, addr, port, terminator=b"\r", interval=0):
+        super().__init__()
         self.addr = addr
         self.port = port
         self.terminator = terminator

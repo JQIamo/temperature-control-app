@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
+from threading import Lock
 
 
 class IODevice(ABC):
+    def __init__(self):
+        self.query_lock = Lock()
+
     @abstractmethod
     def send(self, data: bytes) -> bytes:
         pass
@@ -11,8 +15,9 @@ class IODevice(ABC):
         pass
 
     def query(self, query: bytes, max_len=-1) -> bytes:
-        self.send(query)
-        return self.recv(max_len)
+        with self.query_lock:
+            self.send(query)
+            return self.recv(max_len)
 
     @abstractmethod
     def reset(self, wait=0.5):
