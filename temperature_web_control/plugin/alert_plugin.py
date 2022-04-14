@@ -70,7 +70,7 @@ class HighTemperatureStatusAlertCondition(StatusAlertCondition):
 
         dev = status[self.dev]
 
-        if dev['temperature'] > self.temperature:
+        if 'temperature' in dev and dev['temperature'] > self.temperature:
             return True
         return False
 
@@ -99,7 +99,8 @@ class LowTemperatureStatusAlertCondition(StatusAlertCondition):
 
         dev = status[self.dev]
 
-        if dev['temperature'] < self.temperature:
+        if 'temperature' in dev and dev['temperature'] < self.temperature:
+
             return True
         return False
 
@@ -109,7 +110,7 @@ class LowTemperatureStatusAlertCondition(StatusAlertCondition):
 
 class TemperatureDifferencesTooLargeStatusAlertCondition(StatusAlertCondition):
     def __init__(self, devs, temperature_diff, last_for, logger):
-        super().__init__(f"Temperatures difference among of {', '.join(devs)} higher than {temperature_diff} degrees",
+        super().__init__(f"Temperatures difference among {', '.join(devs)} higher than {temperature_diff} degrees",
                          last_for, logger)
         self.devs = devs
         self.temperature_diff = temperature_diff
@@ -139,6 +140,8 @@ class TemperatureDifferencesTooLargeStatusAlertCondition(StatusAlertCondition):
 
         for dev_name in self.devs:
             dev = status[dev_name]
+            if 'temperature' not in dev:
+                continue
             if dev['temperature'] > highest:
                 highest = dev['temperature']
             elif dev['temperature'] < lowest:
@@ -176,6 +179,9 @@ class TemperatureChangingTooFastStatusAlertCondition(StatusAlertCondition):
             return False
 
         dev = status[self.dev]
+
+        if 'temperature' not in dev:
+            return False
 
         if self.last_temperature is None:
             self.last_temperature = dev['temperature']
