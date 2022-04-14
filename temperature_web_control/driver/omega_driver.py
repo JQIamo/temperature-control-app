@@ -1,6 +1,5 @@
 from functools import wraps
 from typing import List
-from threading import Lock
 
 from temperature_web_control.driver.ethernet_device import EthernetDevice
 from temperature_web_control.driver.io_device import IODevice
@@ -41,20 +40,19 @@ class OmegaControllerError(Exception):
 
     @staticmethod
     def error_to_msg(error_response):
-        error_response = error_response.strip()
-        if error_response == '?43':
-            return "Command Error"
-        elif error_response == '?46':
-            return "Format Error"
-        elif error_response == '?50':
-            return "Parity Error"
-        elif error_response == '?56':
-            return "Serial Device Address Error"
-        elif error_response is not None:
+        if error_response is not None:
+            error_response = error_response.strip()
+            if error_response == '?43':
+                return "Command Error"
+            elif error_response == '?46':
+                return "Format Error"
+            elif error_response == '?50':
+                return "Parity Error"
+            elif error_response == '?56':
+                return "Serial Device Address Error"
             err_str = error_response.decode("utf-8")
-            return f"unknown error {err_str}"
-        else:
-            return f"unknown error"
+            return f"Unknown error {err_str}"
+        return f"Unknown error"
 
 
 class OmegaISeries(TemperatureMonitor):
