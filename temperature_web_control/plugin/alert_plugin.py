@@ -135,17 +135,20 @@ class TemperatureDifferencesTooLargeStatusAlertCondition(StatusAlertCondition):
                 self.logger.debug(f"Alert Plugin: {dev} not in status dict, ignored.")
                 return False
 
-        highest = 0
-        lowest = 0
+        highest = None
+        lowest = None
 
         for dev_name in self.devs:
             dev = status[dev_name]
             if 'temperature' not in dev:
                 continue
-            if dev['temperature'] > highest:
+            if highest is None or dev['temperature'] > highest:
                 highest = dev['temperature']
-            elif dev['temperature'] < lowest:
+            elif lowest is None or dev['temperature'] < lowest:
                 lowest = dev['temperature']
+
+        if highest is None or lowest is None:
+            return False
 
         if highest - lowest > self.temperature_diff:
             return True
@@ -405,8 +408,7 @@ class AbortProgramAction(AlertAction):
     def create_from_config(config, app_core, logger):
         assert type(config) is dict or type(config) is str, "Syntax error"
 
-        if type(config) is dict:
-            assert 'program' in config, "Missing parameter"
+        if type(config) is list:
             return AbortProgramAction(config['program'], app_core, logger)
         else:
             return AbortProgramAction(config, app_core, logger)
