@@ -38,7 +38,8 @@ class EthernetDevice(IODevice):
         self.socket.close()
         time.sleep(wait)
         self.socket = socket.create_connection((self.addr, self.port), timeout=5)
-        self.query_lock.release()
+        if self.query_lock.locked():
+            self.query_lock.release()
 
     def __del__(self):
         self.socket.close()
