@@ -1,5 +1,6 @@
 import json
 import asyncio
+import signal
 from functools import wraps, partial
 from logging import Logger
 
@@ -74,5 +75,9 @@ class WebSocketServer:
     async def serve_until_exit(self):
         self.logger.info(f"WSServer: Websocket server running at ws://{self.bind_addr}:{self.port}")
 
+        loop = asyncio.get_running_loop()
+        stop = loop.create_future()
+        loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+
         async with websockets.serve(self.handler, self.bind_addr, self.port, ping_timeout=20, ping_interval=5):
-            await asyncio.Future()
+            await stop
