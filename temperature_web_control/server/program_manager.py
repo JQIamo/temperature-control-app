@@ -170,6 +170,8 @@ class ProgramManager:
 
                 await self.update_state_callback()
         except Exception as e:
+            self.logger.error("Program: Encountered error: ")
+            self.logger.exception(e)
             await self.error_callback(f"Encounter error when executing {program.name}: {str(e)}")
 
     async def linear_ramp(self, device: TemperatureMonitor, target, rate):

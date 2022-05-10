@@ -10,12 +10,12 @@ from temperature_web_control.utils import Config
 from temperature_web_control.plugin import plugins
 
 config: Config = None
-app_manager: TemperatureAppCore = None
+app_core: TemperatureAppCore = None
 logger = None
 
 async def run_ws_server():
-    global app_manager
-    assert isinstance(app_manager, TemperatureAppCore)
+    global app_core
+    assert isinstance(app_core, TemperatureAppCore)
 
     ws_server = WebSocketServer(
         config.get("bind_addr", default="0.0.0.0"),
@@ -23,18 +23,18 @@ async def run_ws_server():
         logger)
 
     async def subscribe_event_handler(event, handler):
-        app_manager.subscribe_to(event['subscribe_to'],
+        app_core.subscribe_to(event['subscribe_to'],
                                  event['_client_ws'],
                                  ws_server.broadcast,
                                  ws_server)
 
     async def disconnected_event_handler(event, handler):
-        app_manager.unsubscribe_to_all(event['_client_ws'])
+        app_core.unsubscribe_to_all(event['_client_ws'])
 
     ws_server.register_event_handler("subscribe", subscribe_event_handler)
     ws_server.register_event_handler("disconnected", disconnected_event_handler)
 
-    app_event_handlers = app_manager.get_event_handlers()
+    app_event_handlers = app_core.get_event_handlers()
     for name, handler in app_event_handlers.items():
         ws_server.register_event_handler(name, handler)
 
@@ -65,7 +65,7 @@ def run_http_server():
 
 
 async def run(serve_http=True):
-    global config, app_manager, logger
+    global config, app_core, logger
 
     parser = argparse.ArgumentParser(description="Temperature web control app.")
 
@@ -93,11 +93,11 @@ async def run(serve_http=True):
 
     config = Config(args.config)
 
-    app_manager = TemperatureAppCore(config, logger)
+    app_core = TemperatureAppCore(config, logger)
 
     plugin_coroutine = []
     for plugin in plugins.values():
-        plugin_run = plugin.initialize(config, app_manager, logger)
+        plugin_run = plugin.initialize(config, app_core, logger)
         if plugin_run:
             plugin_coroutine.append(plugin_run)
 
@@ -106,9 +106,11 @@ async def run(serve_http=True):
         http_thread.start()
 
     try:
-        coroutines = [run_ws_server(), app_manager.monitor_status()] + plugin_coroutine
+        coroutines = [run_ws_server()] + plugin_coroutine
         for coro in coroutines:
             asyncio.create_task(coro)
+
+        app_core.start_monitoring()
 
         await asyncio.Future()  # block forever
     except KeyboardInterrupt:

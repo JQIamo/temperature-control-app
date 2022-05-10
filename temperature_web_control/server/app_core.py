@@ -69,6 +69,10 @@ class TemperatureAppCore:
         }
         self.last_status = {}
 
+        self.monitor_running = False
+        self.monitor_task = None
+        self.monitor_last_update = 0
+
         self._load_devices()
         self._load_programs()
 
@@ -147,16 +151,53 @@ class TemperatureAppCore:
                     unfinished.cancel()
                     await self.fire_program_error(f"Timeout executing event handler {unfinished}")
 
-    async def monitor_status(self):
-        self.logger.info("AppCore: Monitor start")
-        interval = self.config.get('update_interval', default=5)
-        try:
-            while True:
-                await asyncio.sleep(interval)
-                await self.update_status_and_fire_event()
+    def start_monitoring(self):
+        def done_handler(task):
+            try:
+                task.result()
+            except asyncio.CancelledError:
+                pass  # Task cancellation should not be logged as an error.
+            except Exception as e:
+                self.logger.error(f'AppCore: Monitoring ended unexpectedly with error:')
+                self.logger.exception(e)
 
-        except KeyboardInterrupt:
-            pass
+        self.logger.info("AppCore: Monitor start")
+        self.monitor_task = asyncio.create_task(self.monitor_status())
+        asyncio.create_task(self.check_monitor_alive())
+        self.monitor_running = True
+        self.monitor_task.add_done_callback(done_handler)
+
+    async def monitor_status(self):
+        interval = self.config.get('update_interval', default=5)
+        while True:
+            await asyncio.sleep(interval)
+            await self.update_status_and_fire_event()
+            self.monitor_last_update = time.time()
+
+    async def check_monitor_alive(self):
+        interval = self.config.get('update_interval', default=5)
+        skipped_cycle = 0
+        last_update = time.time()
+
+        await asyncio.sleep(interval)
+        while True:
+            if not self.monitor_running:
+                return
+
+            await asyncio.sleep(interval)
+
+            if self.monitor_last_update > last_update:
+                last_update = self.monitor_last_update
+            else:
+                skipped_cycle += 1
+                if skipped_cycle >= 3:
+                    self.logger.error("AppCore: Monitoring routine got stuck. Probably due to unresponsive drivers. "
+                                      "Restarting.")
+                    await self.fire_program_error(f"Monitoring routine got stuck. Probably due to unresponsive drivers. "
+                                      "Restarting.")
+                    self.monitor_task.cancel()
+                    self.start_monitoring()
+                    return
 
     async def fire_program_error(self, error):
         self.logger.error("AppCore: Received error, broadcasting to clients...")

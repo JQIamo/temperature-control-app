@@ -17,15 +17,18 @@ def retry_wrap(func):
     @wraps(func)
     def _func(self, *args, **kwargs):
         _e = None
+        need_reset = False
 
         for i in range(retry):
             try:
+                if need_reset:
+                    self.reset(wait=(i+1) * 0.5)
                 return func(self, *args, **kwargs)
             except Exception as e:
                 self.logger.error("OmegaISeries: Encountered communication error:")
                 self.logger.exception(e)
                 self.logger.error(f"OmegaISeries: Retrying, {i+1} of {retry} times...")
-                self.reset(wait=(i+1) * 0.5)
+                need_reset = True
                 _e = e
                 pass
 
