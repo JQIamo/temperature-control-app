@@ -188,9 +188,10 @@ class TemperatureAppCore:
 
             if self.monitor_last_update > last_update:
                 last_update = self.monitor_last_update
+                skipped_cycle = 0
             else:
                 skipped_cycle += 1
-                if skipped_cycle >= 3:
+                if skipped_cycle >= 5:
                     self.logger.error("AppCore: Monitoring routine got stuck. Probably due to unresponsive drivers. "
                                       "Restarting.")
                     await self.fire_program_error(f"Monitoring routine got stuck. Probably due to unresponsive drivers. "
