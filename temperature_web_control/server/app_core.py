@@ -197,6 +197,8 @@ class TemperatureAppCore:
                     await self.fire_program_error(f"Monitoring routine got stuck. Probably due to unresponsive drivers. "
                                       "Restarting.")
                     self.monitor_task.cancel()
+                    self.dev_instances = {}
+                    self._load_devices()
                     self.start_monitoring()
                     return
 
